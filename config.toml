@@ -6,6 +6,10 @@ parallel-jobs = 1
 
 # you can use rvmm-config-gen to generate a config
 
+# Apps with `clone = true` and build-mode "both" emit a root MODULE (original package, mounts over
+# the stock app) AND a non-root CLONE apk renamed to app.<patch>.<pkg> so it coexists with the official
+# app — same single-entry pattern YouTube/Music get from the microG patch.
+
 [YouTube-Morphe]
 app-name = "YouTube"
 patches-source = "MorpheApp/morphe-patches"
@@ -29,35 +33,51 @@ archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.google.andro
 
 [Reddit-Morphe]
 app-name = "Reddit"
-rv-brand = "Morphe"
-build-mode = "both"
 patches-source = "MorpheApp/morphe-patches"
 cli-source = "MorpheApp/morphe-cli"
+rv-brand = "Morphe"
+build-mode = "both"   # module (com.reddit.frontpage) + clone apk (app.morphe.reddit.frontpage)
+clone = true
 apkmirror-dlurl = "https://www.apkmirror.com/apk/redditinc/reddit/"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.reddit.frontpage"
 uptodown-dlurl = "https://reddit-official-app.en.uptodown.com/android"
 dpi = "120-640dpi"
 
-[Twitter]
+[Twitter-Piko]
+app-name = "Twitter"
 patches-source = "crimera/piko"
 cli-source = "MorpheApp/morphe-cli"
 rv-brand = "Piko"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/x-corp/twitter/"
-archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.twitter.android"
-build-mode = "module"
+build-mode = "module"   # module-only: Piko ships no rename patch for Twitter, so no clone apk
 version = "11.81.0-release.0"
 include-stock = "split"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/x-corp/twitter/"
+archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.twitter.android"
 # 'Block redirecting to X Lite' is a Piko v3.6.0 patch whose fingerprint does
 # not match the pinned 11.81.0 (pre-Piko-Shim) version; exclude it so the build succeeds.
 excluded-patches = "'Block redirecting to X Lite'"
 
-[Instagram]
+[Instagram-Piko]
+app-name = "Instagram"
 patches-source = "crimera/piko"
 cli-source = "MorpheApp/morphe-cli"
 rv-brand = "Piko"
-build-mode = "apk"            # non-root first; pairip makes module mode risky
+build-mode = "both"   # module (com.instagram.android) + clone apk (app.piko.instagram.android)
+clone = true
 version = "430.0.0.53.80"     # exact version Piko v3.6.0 supports — do NOT use "auto"
 arch = "arm64-v8a"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.instagram.android"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram/"
 uptodown-dlurl = "https://instagram.en.uptodown.com/android"
+
+[Facebook-DeVanced]
+app-name = "Facebook"
+patches-source = "RookieEnough/De-Vanced"
+cli-source = "MorpheApp/morphe-cli"
+rv-brand = "De-Vanced"
+build-mode = "both"   # module (com.facebook.katana) + clone apk (app.devanced.facebook.katana)
+clone = true
+version = "490.0.0.63.82"      # De-Vanced-supported version
+arch = "arm64-v8a"
+archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.facebook.katana"
+uptodown-dlurl = "https://facebook.en.uptodown.com/android"

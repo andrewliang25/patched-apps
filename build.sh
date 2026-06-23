@@ -94,6 +94,7 @@ for table_name in $(toml_get_table_names); do
 	app_args[version]=$(toml_get "$t" version) || app_args[version]="auto"
 	app_args[app_name]=$(toml_get "$t" app-name) || app_args[app_name]=$table_name
 	app_args[patcher_args]=$(toml_get "$t" patcher-args) || app_args[patcher_args]=""
+	app_args[clone]=$(toml_get "$t" clone) && vtf "${app_args[clone]}" "clone" || app_args[clone]=false
 	app_args[table]=$table_name
 	app_args[build_mode]=$(toml_get "$t" build-mode) && {
 		if ! isoneof "${app_args[build_mode]}" both apk module; then
@@ -159,7 +160,7 @@ rm -rf temp/tmp.*
 if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then abort "All builds failed."; fi
 
 log "\nInstall [Microg](https://github.com/ReVanced/GmsCore/releases) for non-root YouTube and YT Music APKs"
-log "Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach YouTube and YT Music modules from Play Store"
+log "Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach the patched apps from the Play Store when using the Magisk/KernelSU modules"
 log "\n[Patched Apps](https://github.com/andrewliang25/patched-apps)\n"
 log "$(cat "$TEMP_DIR"/*/changelog.md)"
 

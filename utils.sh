@@ -697,6 +697,20 @@ build_rv() {
 		p_patcher_args=("${p_patcher_args[@]//-[ei] ${microg_patch}/}")
 	fi
 
+	# clone (apk mode only): a renamed package so the apk coexists with the official app;
+	# the module keeps the original package (the rename patch is off by default in module mode).
+	local clone_patch="" clone_pkg=""
+	if [ "${args[clone]}" = true ]; then
+		clone_patch=$(grep -m1 "^Name: Clone$" <<<"$list_patches" || grep -m1 "^Name: Change package name$" <<<"$list_patches") || :
+		clone_patch=${clone_patch#*: }
+		if [ -z "$clone_patch" ]; then
+			epr "clone=true but no 'Clone'/'Change package name' patch found for $pkg_name; skipping clone"
+		else
+			local brand_pkg=${args[rv_brand],,} && brand_pkg=${brand_pkg//[^a-z0-9]/}
+			clone_pkg="app.${brand_pkg}.${pkg_name#com.}"
+		fi
+	fi
+
 	local patcher_args patched_apk build_mode
 	local rv_brand_f=${args[rv_brand],,}
 	rv_brand_f=${rv_brand_f// /-}
@@ -704,7 +718,7 @@ build_rv() {
 	for build_mode in "${build_mode_arr[@]}"; do
 		patcher_args=("${p_patcher_args[@]}")
 		pr "Building '${table}' in '$build_mode' mode"
-		if [ -n "$microg_patch" ]; then
+		if [ -n "$microg_patch" ] || [ -n "$clone_patch" ]; then
 			patched_apk="${TEMP_DIR}/${app_name_l}-${rv_brand_f}-${version_f}-${arch_f}-${build_mode}.apk"
 		else
 			patched_apk="${TEMP_DIR}/${app_name_l}-${rv_brand_f}-${version_f}-${arch_f}.apk"
@@ -715,6 +729,9 @@ build_rv() {
 			elif [ "$build_mode" = module ]; then
 				patcher_args+=("-d \"${microg_patch}\"")
 			fi
+		fi
+		if [ -n "$clone_patch" ] && [ "$build_mode" = apk ]; then
+			patcher_args+=("-O packageName=${clone_pkg} -e \"${clone_patch}\"")
 		fi
 
 		local stock_apk_to_patch="${stock_apk}.stripped.apk"

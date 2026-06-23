@@ -15,13 +15,16 @@ Use [**zygisk-detach**](https://github.com/j-hc/zygisk-detach) to detach YouTube
 
 | App | Patches | Output | Notes |
 | --- | --- | --- | --- |
-| **YouTube** | Morphe | APK + module | rebranded "Morphe" |
-| **YT Music** | Morphe | APK + module | rebranded "Morphe" |
-| **Reddit** | Morphe | APK + module | rebranded "Morphe" |
-| **Twitter / X** | Piko | module | pinned `11.81.0-release.0` (last pre-Piko-Shim version) |
-| **Instagram** | Piko | APK (arm64-v8a) | pinned `430.0.0.53.80` |
+| **YouTube** | Morphe | non-root APK + module | APK renamed (microG) |
+| **YT Music** | Morphe | non-root APK + module | arm64-v8a; APK renamed (microG) |
+| **Reddit** | Morphe | module + clone APK | clone: `app.morphe.reddit.frontpage` |
+| **Twitter / X** | Piko | module | pinned `11.81.0-release.0`; no clone (Piko ships no rename patch) |
+| **Instagram** | Piko | module + clone APK | pinned `430.0.0.53.80`; clone `app.piko.instagram.android` |
+| **Facebook** | De-Vanced | module + clone APK | pinned `490.0.0.63.82`; clone `app.devanced.facebook.katana` |
 
-> Twitter and Instagram use the [Piko](https://github.com/crimera/piko) patches via the [Morphe CLI](https://github.com/MorpheApp/morphe-cli). Twitter is pinned to `11.81.0-release.0` because newer versions (11.88+) require the separate Piko-Shim bundle, which a single-bundle build cannot supply. Instagram is pinned to `430.0.0.53.80` (arm64-v8a, the version Piko v3.6.0 supports) and mirrored from a self-hosted archive.org item, since apkmirror/uptodown don't reliably serve that build. Downloaded stock APKs are signature-verified against each app's official signing certificate (`sig.txt`).
+> **One entry → module + clone APK.** Each app is a single config entry. For Reddit/Instagram/Facebook, `clone = true` makes the build emit a root **module** (original package, mounts over the stock app) **and** a renamed **clone APK** — `app.<patch>.<pkg>` (e.g. `app.piko.instagram.android`) — that installs *alongside* the official app without root. It's the same single-entry pattern YouTube/YT Music get from the microG patch (their non-root APK is auto-renamed). Twitter is module-only (Piko ships no rename patch for it).
+>
+> Twitter and Instagram use [Piko](https://github.com/crimera/piko), Facebook uses [De-Vanced](https://github.com/RookieEnough/De-Vanced) — all via the [Morphe CLI](https://github.com/MorpheApp/morphe-cli). Twitter is pinned to `11.81.0-release.0` (newer versions need the separate Piko-Shim bundle); Instagram (`430.0.0.53.80`) and Facebook (`490.0.0.63.82`) are pinned, arm64-v8a, and mirrored from a self-hosted archive.org item. Downloaded stock APKs are signature-verified against each app's official signing certificate (`sig.txt`). Instagram and Facebook are **experimental** — integrity-protected (pairip) apps whose patched builds may not run on all setups.
 
 For non-root YouTube and YT Music APKs, install [MicroG / GmsCore](https://github.com/ReVanced/GmsCore/releases).
 
