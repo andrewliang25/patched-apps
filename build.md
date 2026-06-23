@@ -1,3 +1,4 @@
+Instagram: 430.0.0.53.80  
 Music-Morphe (arm64-v8a): 8.51.51  
 Music-Morphe (arm-v7a): 8.51.51  
 Reddit-Morphe: 2026.14.0  
