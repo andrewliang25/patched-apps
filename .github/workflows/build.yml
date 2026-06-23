@@ -119,11 +119,11 @@ jobs:
       - name: Report to Telegram
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
-        if: env.TG_TOKEN != null
+          TG_CHAT: ${{ vars.TG_CHAT }}
+        if: ${{ env.TG_TOKEN != '' && env.TG_CHAT != '' }}
         run: |
           cd build || { echo "build folder not found"; exit 1; }
 
-          TG_CHAT="@rvc_magisk"
           NL=$'\n'
           APKS=""
           MODULES=""
@@ -139,7 +139,7 @@ jobs:
           APKS=${APKS#"$NL"}
 
           BODY="$(sed 's/^\* \*\*/↪ \*\*/g; s/^\* `/↪ \*\*/g; s/`/\*/g; s/^\* /\↪/g; s/\*\*/\*/g; s/###//g; s/^- /↪ /g; /^==/d;' ../build.md)"
-          MSG="*New build!*
+          MSG="🚀 *New Patched Apps build!*
 
           ${BODY}
 
@@ -149,6 +149,9 @@ jobs:
 
           APKs:
           ${APKS}
+
+          —
+          📢 [@andrewspatchedapps](https://t.me/andrewspatchedapps)
           "
           echo "'$MSG'"
           MSG=${MSG:0:9450}

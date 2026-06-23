@@ -190,5 +190,5 @@ fi
 rm -rf "${MODPATH:?}/bin" "$MODPATH/stock/"
 
 ui_print "* Done"
-ui_print "  by j-hc (github.com/j-hc)"
+ui_print "  by Andrew Liang (github.com/andrewliang25)"
 ui_print " "
