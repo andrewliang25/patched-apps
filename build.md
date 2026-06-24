@@ -1,6 +1,7 @@
 Facebook-DeVanced: 490.0.0.63.82  
 Instagram-Piko: 430.0.0.53.80  
 Music-Morphe: 9.15.51  
+Photos-DeVanced: 7.82.0.936266860  
 Reddit-Morphe: 2026.14.0  
 Twitter-Piko: 11.81.0-release.0  
 YouTube-Morphe: 20.51.39  
@@ -16,6 +17,7 @@ Patches: crimera/patches-3.6.0.mpp
 Patches: MorpheApp/patches-1.32.0.mpp  
 [Changelog](https://github.com/MorpheApp/morphe-patches/releases/tag/v1.32.0)
 
-CLI: MorpheApp/morphe-cli-1.9.1-all.jar  
 Patches: RookieEnough/patches-1.0.4.mpp  
-[Changelog](https://github.com/RookieEnough/De-Vanced/releases/tag/v1.0.4)  
+[Changelog](https://github.com/RookieEnough/De-Vanced/releases/tag/v1.0.4)
+
+CLI: MorpheApp/morphe-cli-1.9.1-all.jar    
