@@ -3,6 +3,7 @@ Instagram-Piko: 430.0.0.53.80
 Music-Morphe: 9.15.51  
 Photos-DeVanced: 7.82.0.936266860  
 Reddit-Morphe: 2026.14.0  
+Telegram-Paresh: 12.6.4  
 Threads-DeVanced: 382.0.0.51.85  
 Twitter-Piko: 11.81.0-release.0  
 YouTube-Morphe: 20.51.39  
