@@ -25,6 +25,9 @@ jobs:
           fetch-depth: 0
           submodules: true
 
+      - name: Save notification script
+        run: cp .github/scripts/tg-notify.sh "$RUNNER_TEMP/tg-notify.sh"
+
       - name: Update config
         if: ${{ inputs.from_ci }}
         run: |
@@ -154,6 +157,13 @@ jobs:
           📢 [@andrewspatchedapps](https://t.me/andrewspatchedapps)
           "
           echo "'$MSG'"
-          MSG=${MSG:0:9450}
-          POST="https://api.telegram.org/bot${TG_TOKEN}/sendMessage"
-          curl -X POST --data-urlencode "parse_mode=Markdown" --data-urlencode "disable_web_page_preview=true" --data-urlencode "text=${MSG}" --data-urlencode "chat_id=${TG_CHAT}" "$POST"
+          bash "$RUNNER_TEMP/tg-notify.sh" "$MSG"
+
+      - name: Report failure to Telegram
+        if: ${{ failure() && !inputs.from_ci }}
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT: ${{ vars.TG_CHAT_ADMIN }}
+        run: |
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          bash "$RUNNER_TEMP/tg-notify.sh" "❌ *Build failed* ([run]($RUN_URL))"

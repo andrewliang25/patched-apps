@@ -48,3 +48,33 @@ jobs:
     uses: ./.github/workflows/build.yml
     if: ${{ needs.check.outputs.SHOULD_BUILD == 1 }}
     secrets: inherit
+
+  notify:
+    needs: [check, build]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Daily status to Telegram
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT: ${{ vars.TG_CHAT_ADMIN }}
+        run: |
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          CHECK="${{ needs.check.result }}"
+          BUILD="${{ needs.build.result }}"
+          SB="${{ needs.check.outputs.SHOULD_BUILD }}"
+          if [ "$CHECK" = "failure" ]; then
+            MSG="❌ *Daily CI check failed* ([run]($RUN_URL))"
+          elif [ "$SB" != "1" ]; then
+            MSG="✅ *Daily check* — no new patches, build skipped. ([run]($RUN_URL))"
+          elif [ "$BUILD" = "success" ]; then
+            MSG="✅ *Daily build succeeded* — release posted to the channel. ([run]($RUN_URL))"
+          elif [ "$BUILD" = "failure" ]; then
+            MSG="❌ *Daily build failed* ([run]($RUN_URL))"
+          else
+            MSG="⚠️ *Daily build did not complete* (\`$BUILD\`) ([run]($RUN_URL))"
+          fi
+          bash .github/scripts/tg-notify.sh "$MSG"

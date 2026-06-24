@@ -59,6 +59,8 @@ The main (top-level) table sets defaults; each `[App]` table overrides them. Key
 
 `ci.yml` runs daily on cron: it checks out `build.md` from the `update` branch and runs `--config-update` to see if any enabled app has newer patches; only then does it call `build.yml`. `build.yml` builds, uploads APKs/modules to a GitHub Release tagged with an incrementing version code, regenerates `*-update.json` files on the `update` branch (these power in-app Magisk module updates), and optionally posts to Telegram. The `update` branch is data, not code — it holds `build.md` (the changelog/state) and the per-module update JSONs.
 
+**Telegram notifications.** All Telegram posts go through `.github/scripts/tg-notify.sh` (curl wrapper; no-ops if `TG_TOKEN`/`TG_CHAT` env is empty). Two destinations, one bot (`TG_TOKEN` secret): the **public** release announcement in `build.yml`'s "Report to Telegram" step posts to `TG_CHAT` (var); the **admin** notifications post to `TG_CHAT_ADMIN` (var). Admin gets a daily heartbeat from `ci.yml`'s `notify` job (`if: always()`, reads `needs.check/build.result` → built/skipped/failed) and a build-failure alert from `build.yml`'s `Report failure to Telegram` step (`if: failure() && !inputs.from_ci`, so CI-triggered failures are reported once by `ci.yml`, not duplicated). Failure messages are minimal — a line plus the Actions run URL.
+
 ## Signing keys
 
 `ks.keystore` (patched APKs) and `ks-p12.keystore` (merged stock bundles) use alias `jhc` / password `123456789`. These are committed intentionally — they are throwaway signing keys for self-built APKs, not secrets.
