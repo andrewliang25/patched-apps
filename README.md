@@ -9,19 +9,17 @@ A personal Morphe / Piko / De-Vanced builder that produces non-root APKs and Mag
 
 ## Apps
 
-Grouped by vendor — **Google**, then **Meta**, then **others**.
-
 | App | Patches | Major features | Output | Notes |
 | --- | --- | --- | --- | --- |
-| **YouTube** | Morphe | Ad-free video, SponsorBlock, background playback, Return YouTube Dislike, custom themes | non-root APK + module | APK renamed (MicroG-RE) |
-| **YT Music** | Morphe | Ad-free, background playback, exclusive-audio mode, minimized playback | non-root APK + module | arm64-v8a; APK renamed (MicroG-RE) |
-| **Google Photos** | De-Vanced | Unlimited original-quality backup, removes the device/account model lock | non-root APK + module | APK renamed to `app.devanced.google.android.apps.photos` (uses MicroG-RE) |
-| **Instagram** | Piko | Block ads/sponsored posts, download photos/videos/reels, hide story "seen", disable typing & read receipts | non-root APK + module | pinned `430.0.0.53.80`; APK renamed to `app.piko.instagram.android` — **experimental** |
-| **Facebook** | De-Vanced | Block ads/sponsored posts, cleaner feed | non-root APK + module | pinned `490.0.0.63.82`; APK renamed to `app.devanced.facebook.katana` — **experimental** (see [permission conflict](#meta-app-clones-duplicate-permission-conflict)) |
-| **Threads** | De-Vanced | Block ads, hide suggested threads | non-root APK + module | arm64-v8a; APK renamed to `app.devanced.instagram.barcelona` |
-| **Reddit** | Morphe | Block ads, sanitize share links, hide recommendations/premium prompts, custom branding | non-root APK + module | non-root APK renamed to `app.morphe.reddit.frontpage` |
-| **Twitter / X** | Piko | Hide ads/promoted tweets, download media, restore chronological timeline, hide view counts | module | pinned `11.81.0-release.0`; module-only (Piko ships no rename patch) |
-| **Telegram** | Paresh-Patches | Ghost mode (no read receipts), anti-delete/anti-edit, save restricted media | non-root APK + module | targets the standalone/website build `org.telegram.messenger.web`; not renamed (Paresh ships no rename patch) — already coexists with the Play Store build `org.telegram.messenger` |
+| <div align="center"><img src="assets/icons/youtube.svg" width="28"><br><b>YouTube</b></div> | Morphe | Ad-free video, SponsorBlock, background playback, Return YouTube Dislike, custom themes | non-root APK + module | APK renamed (MicroG-RE) |
+| <div align="center"><img src="assets/icons/ytmusic.svg" width="28"><br><b>YT Music</b></div> | Morphe | Ad-free, background playback, exclusive-audio mode, minimized playback | non-root APK + module | arm64-v8a; APK renamed (MicroG-RE) |
+| <div align="center"><img src="assets/icons/googlephotos.svg" width="28"><br><b>Google Photos</b></div> | De-Vanced | Unlimited original-quality backup, removes the device/account model lock | non-root APK + module | APK renamed to `app.devanced.google.android.apps.photos` (uses MicroG-RE) |
+| <div align="center"><img src="assets/icons/instagram.svg" width="28"><br><b>Instagram</b></div> | Piko | Block ads/sponsored posts, download photos/videos/reels, hide story "seen", disable typing & read receipts | non-root APK + module | pinned `430.0.0.53.80`; APK renamed to `app.piko.instagram.android` — **experimental** |
+| <div align="center"><img src="assets/icons/facebook.svg" width="28"><br><b>Facebook</b></div> | De-Vanced | Block ads/sponsored posts, cleaner feed | non-root APK + module | pinned `490.0.0.63.82`; APK renamed to `app.devanced.facebook.katana` — **experimental** (see [permission conflict](#meta-app-clones-duplicate-permission-conflict)) |
+| <div align="center"><img src="assets/icons/threads.svg" width="28"><br><b>Threads</b></div> | De-Vanced | Block ads, hide suggested threads | non-root APK + module | arm64-v8a; APK renamed to `app.devanced.instagram.barcelona` |
+| <div align="center"><img src="assets/icons/reddit.svg" width="28"><br><b>Reddit</b></div> | Morphe | Block ads, sanitize share links, hide recommendations/premium prompts, custom branding | non-root APK + module | non-root APK renamed to `app.morphe.reddit.frontpage` |
+| <div align="center"><img src="assets/icons/twitter.svg" width="28"><br><b>Twitter / X</b></div> | Piko | Hide ads/promoted tweets, download media, restore chronological timeline, hide view counts | module | pinned `11.81.0-release.0`; module-only (Piko ships no rename patch) |
+| <div align="center"><img src="assets/icons/telegram.svg" width="28"><br><b>Telegram</b></div> | Paresh-Patches | Ghost mode (no read receipts), anti-delete/anti-edit, save restricted media | non-root APK + module | targets the standalone/website build `org.telegram.messenger.web`; not renamed (Paresh ships no rename patch) — already coexists with the Play Store build `org.telegram.messenger` |
 
 Each app is a single config entry that emits two output types:
 
