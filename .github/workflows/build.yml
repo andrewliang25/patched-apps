@@ -75,10 +75,12 @@ jobs:
           BODY: ${{ steps.get_output.outputs.BUILD_LOG }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --title "Release" --notes "$BODY"
+            gh release edit "$TAG" --title "Release" --notes "$BODY" --draft
             gh release upload "$TAG" ./build/* --clobber
+            gh release edit "$TAG" --draft=false
           else
-            gh release create "$TAG" ./build/* --title "Release" --notes "$BODY"
+            gh release create "$TAG" ./build/* --title "Release" --notes "$BODY" --draft
+            gh release edit "$TAG" --draft=false
           fi
 
       - name: Update modules changelog and update json
