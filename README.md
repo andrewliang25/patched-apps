@@ -9,17 +9,19 @@ A personal Morphe / Piko / De-Vanced builder that produces non-root APKs and Mag
 
 ## Apps
 
-| App | Patches | Output | Notes |
-| --- | --- | --- | --- |
-| **YouTube** | Morphe | non-root APK + module | APK renamed (MicroG-RE) |
-| **YT Music** | Morphe | non-root APK + module | arm64-v8a; APK renamed (MicroG-RE) |
-| **Reddit** | Morphe | non-root APK + module | non-root APK renamed to `app.morphe.reddit.frontpage` |
-| **Twitter / X** | Piko | module | pinned `11.81.0-release.0`; module-only (Piko ships no rename patch) |
-| **Instagram** | Piko | non-root APK + module | pinned `430.0.0.53.80`; APK renamed to `app.piko.instagram.android` — **experimental** |
-| **Facebook** | De-Vanced | non-root APK + module | pinned `490.0.0.63.82`; APK renamed to `app.devanced.facebook.katana` — **experimental** (see [permission conflict](#meta-app-clones-duplicate-permission-conflict)) |
-| **Threads** | De-Vanced | non-root APK + module | arm64-v8a; APK renamed to `app.devanced.instagram.barcelona` |
-| **Telegram** | Paresh-Patches | non-root APK + module | targets `org.telegram.messenger.web` (Play Store variant) |
-| **Google Photos** | De-Vanced | non-root APK + module | APK renamed to `app.devanced.google.android.apps.photos` (uses MicroG-RE) |
+Grouped by vendor — **Google**, then **Meta**, then **others**.
+
+| App | Patches | Major features | Output | Notes |
+| --- | --- | --- | --- | --- |
+| **YouTube** | Morphe | Ad-free video, SponsorBlock, background playback, Return YouTube Dislike, custom themes | non-root APK + module | APK renamed (MicroG-RE) |
+| **YT Music** | Morphe | Ad-free, background playback, exclusive-audio mode, minimized playback | non-root APK + module | arm64-v8a; APK renamed (MicroG-RE) |
+| **Google Photos** | De-Vanced | Unlimited original-quality backup, removes the device/account model lock | non-root APK + module | APK renamed to `app.devanced.google.android.apps.photos` (uses MicroG-RE) |
+| **Instagram** | Piko | Block ads/sponsored posts, download photos/videos/reels, hide story "seen", disable typing & read receipts | non-root APK + module | pinned `430.0.0.53.80`; APK renamed to `app.piko.instagram.android` — **experimental** |
+| **Facebook** | De-Vanced | Block ads/sponsored posts, cleaner feed | non-root APK + module | pinned `490.0.0.63.82`; APK renamed to `app.devanced.facebook.katana` — **experimental** (see [permission conflict](#meta-app-clones-duplicate-permission-conflict)) |
+| **Threads** | De-Vanced | Block ads, hide suggested threads | non-root APK + module | arm64-v8a; APK renamed to `app.devanced.instagram.barcelona` |
+| **Reddit** | Morphe | Block ads, sanitize share links, hide recommendations/premium prompts, custom branding | non-root APK + module | non-root APK renamed to `app.morphe.reddit.frontpage` |
+| **Twitter / X** | Piko | Hide ads/promoted tweets, download media, restore chronological timeline, hide view counts | module | pinned `11.81.0-release.0`; module-only (Piko ships no rename patch) |
+| **Telegram** | Paresh-Patches | Ghost mode (no read receipts), anti-delete/anti-edit, save restricted media | non-root APK + module | targets the standalone/website build `org.telegram.messenger.web`; not renamed (Paresh ships no rename patch) — already coexists with the Play Store build `org.telegram.messenger` |
 
 Each app is a single config entry that emits two output types:
 
@@ -31,13 +33,22 @@ Each app is a single config entry that emits two output types:
 ## Installing
 
 * **Non-root YouTube, YT Music, and Google Photos APKs** need [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) installed.
-* **All KernelSU/Magisk modules:** use [**zygisk-detach**](https://github.com/j-hc/zygisk-detach) to detach them from the Play Store.
+* **All KernelSU/Magisk modules:** add the target app to the Zygisk **DenyList** (or the mount won't apply), and use [**zygisk-detach**](https://github.com/j-hc/zygisk-detach) to detach them from the Play Store to prevent being updated.
 
 ### Meta-app clones: duplicate-permission conflict
 
-The Facebook **clone APK** may fail to install alongside the official app with `INSTALL_FAILED_DUPLICATE_PERMISSION`. Renaming the package (`Change package name` patch, even with `updatePermissions`/`updateProviders`) does **not** rename the *company-prefixed* custom permissions Meta apps declare — e.g. `com.facebook.permission.prod.FB_APP_COMMUNICATION` and `com.facebook.receiver.permission.ACCESS`. The clone re-declares those exact permission names, so if any other Meta app that owns them (official **Facebook** or **Messenger** — both known) is installed, Android rejects the clone.
+Meta clone APKs may fail to install alongside the official app with `INSTALL_FAILED_DUPLICATE_PERMISSION`.
 
-Known affected: stock **Facebook** and **Messenger** share these permissions; other Meta apps (Instagram, Threads, etc.) may declare their own overlapping permissions and hit the same conflict. Workarounds: uninstall the conflicting official Meta app first, or use the root **module** (original package, no permission rename needed) instead of the clone. A manual fix is to rewrite the `com.facebook.*` permission strings to `app.facebook.*` in `AndroidManifest.xml` and re-sign — the build does **not** do this automatically.
+Known affected (each pair shares the same custom permissions, so only **one** of the two can be installed at a time):
+
+* **Facebook** + **Messenger** — stock and patched both declare the same `com.facebook.*` permissions; you can keep only one across the Facebook/Messenger family.
+* **Threads** — stock and patched Threads conflict on Threads' own shared permissions; you can keep only one.
+
+Workarounds: uninstall the conflicting official Meta app first, or use the root **module** (original package, no permission rename needed) instead of the clone.
+
+### Instagram Piko module: Piko settings won't open
+
+On the Instagram **module** (original package, mounted over the stock app), the Piko settings screen cannot be opened — see [crimera/piko#882](https://github.com/crimera/piko/issues/882). Recommended workaround: use the **clone APK** (`app.piko.instagram.android`) instead, where the settings open normally.
 
 ## Building locally
 
