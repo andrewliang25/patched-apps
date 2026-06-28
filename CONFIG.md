@@ -29,6 +29,13 @@ rv-brand = "ReVanced Extended" # rebrand from 'ReVanced' to something different.
 patches-version = "v2.160.0" # 'latest', 'dev', or a version number. default: "latest"
 cli-version = "v5.0.0"       # 'latest', 'dev', or a version number. default: "latest"
 
+# optional: an additional patch bundle applied alongside patches-source in the same patch run
+# (extra '-p' flag), e.g. inotia00/x-shim together with crimera/piko. supports 'gitlab:' and
+# GitHub like patches-source. its release is also tracked by the daily update check, so a new
+# version of this bundle triggers a rebuild on its own.
+extra-patches-source = "gitlab:inotia00/x-shim" # default: unset
+extra-patches-version = "latest"                # 'latest', 'dev', or a version number. default: "latest"
+
 [Some-App]
 app-name = "SomeApp" # if set, release name becomes SomeApp instead of Some-App. default is same as table name, which is 'Some-App' here.
 enabled = true       # whether to build the app. default: true

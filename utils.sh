@@ -151,7 +151,12 @@ get_prebuilts() {
 			else
 				gh_dl "$file" "$url" >&2 || return 1
 			fi
-			echo "$tag: $(cut -d/ -f1 <<<"$bare_src")/${name}  " >>"${cl_dir}/changelog.md"
+			if [ "$tag" = CLI ]; then
+				# CLI line goes to a separate file so build.md lists it after all Patches lines
+				echo "$tag: $(cut -d/ -f1 <<<"$bare_src")/${name}  " >>"${TEMP_DIR}/cli-changelog.md"
+			else
+				echo "$tag: $(cut -d/ -f1 <<<"$bare_src")/${name}  " >>"${cl_dir}/changelog.md"
+			fi
 		else
 			grab_cl=false
 			name=$(basename "$file")
@@ -199,6 +204,65 @@ set_prebuilts() {
 	TOML="${BIN_DIR}/toml/tq-${arch}"
 }
 
+# checks whether a patches source has a release newer than what build.md records.
+# returns 0 if so (=> the app using it needs a rebuild), 1 otherwise.
+# shares caller scope: sources[] (per-source dedup cache), prcfg; uses global TEMP_DIR.
+_config_update_check_src() {
+	local PATCHES_SRC=$1 PATCHES_VER=$2
+	if [[ -v sources["$PATCHES_SRC/$PATCHES_VER"] ]]; then
+		[ "${sources["$PATCHES_SRC/$PATCHES_VER"]}" = 1 ]
+		return
+	fi
+	sources["$PATCHES_SRC/$PATCHES_VER"]=0
+	local is_gitlab_cu=false bare_patches_src="$PATCHES_SRC"
+	if [[ "$PATCHES_SRC" == gitlab:* ]]; then is_gitlab_cu=true; bare_patches_src="${PATCHES_SRC#gitlab:}"; fi
+	local rv_rel last_patches OP
+	if [ "$is_gitlab_cu" = true ]; then
+		rv_rel="https://gitlab.com/api/v4/projects/${bare_patches_src//\//%2F}/releases"
+	else
+		rv_rel="https://api.github.com/repos/${bare_patches_src}/releases"
+	fi
+	if [ "$PATCHES_VER" = "dev" ]; then
+		if [ "$is_gitlab_cu" = true ]; then
+			last_patches=$(req "$rv_rel" - | jq -e -r '.[0]') || return 1
+		else
+			last_patches=$(gh_req "$rv_rel" - | jq -e -r '.[0]') || return 1
+		fi
+	elif [ "$PATCHES_VER" = "latest" ]; then
+		if [ "$is_gitlab_cu" = true ]; then
+			last_patches=$(req "$rv_rel" - | jq -e -r '.[0]') || return 1
+		else
+			last_patches=$(gh_req "$rv_rel/latest" -) || return 1
+		fi
+	else
+		if [ "$is_gitlab_cu" = true ]; then
+			last_patches=$(req "$rv_rel/${PATCHES_VER}" -) || return 1
+		else
+			last_patches=$(gh_req "$rv_rel/tags/${PATCHES_VER}" -) || return 1
+		fi
+	fi
+	if [ "$is_gitlab_cu" = true ]; then
+		if ! last_patches=$(jq -e -r '.assets.links[] | select(.name | (endswith("asc") or endswith("json")) | not) | .name' <<<"$last_patches"); then
+			abort "config_update error: '$last_patches'"
+		fi
+	else
+		if ! last_patches=$(jq -e -r '.assets[] | select(.name | (endswith("asc") or endswith("json")) | not) | .name' <<<"$last_patches"); then
+			abort "config_update error: '$last_patches'"
+		fi
+	fi
+	if [ "$last_patches" ]; then
+		if ! OP=$(grep "^Patches: ${bare_patches_src%%/*}/" build.md | grep -m1 "$last_patches"); then
+			sources["$PATCHES_SRC/$PATCHES_VER"]=1
+			prcfg=true
+			return 0
+		else
+			echo "$OP" >>"$TEMP_DIR"/skipped
+			return 1
+		fi
+	fi
+	return 1
+}
+
 config_update() {
 	if [ ! -f build.md ]; then abort "build.md not available"; fi
 	declare -A sources
@@ -212,56 +276,13 @@ config_update() {
 		if [ "$enabled" = "false" ]; then continue; fi
 		PATCHES_SRC=$(toml_get "$t" patches-source) || PATCHES_SRC=$DEF_PATCHES_SRC
 		PATCHES_VER=$(toml_get "$t" patches-version) || PATCHES_VER=$DEF_PATCHES_VER
-		if [[ -v sources["$PATCHES_SRC/$PATCHES_VER"] ]]; then
-			if [ "${sources["$PATCHES_SRC/$PATCHES_VER"]}" = 1 ]; then upped+=("$table_name"); fi
-		else
-			sources["$PATCHES_SRC/$PATCHES_VER"]=0
-			local is_gitlab_cu=false bare_patches_src="$PATCHES_SRC"
-			if [[ "$PATCHES_SRC" == gitlab:* ]]; then is_gitlab_cu=true; bare_patches_src="${PATCHES_SRC#gitlab:}"; fi
-			local rv_rel
-			if [ "$is_gitlab_cu" = true ]; then
-				rv_rel="https://gitlab.com/api/v4/projects/${bare_patches_src//\//%2F}/releases"
-			else
-				rv_rel="https://api.github.com/repos/${bare_patches_src}/releases"
-			fi
-			if [ "$PATCHES_VER" = "dev" ]; then
-				if [ "$is_gitlab_cu" = true ]; then
-					last_patches=$(req "$rv_rel" - | jq -e -r '.[0]') || continue
-				else
-					last_patches=$(gh_req "$rv_rel" - | jq -e -r '.[0]') || continue
-				fi
-			elif [ "$PATCHES_VER" = "latest" ]; then
-				if [ "$is_gitlab_cu" = true ]; then
-					last_patches=$(req "$rv_rel" - | jq -e -r '.[0]') || continue
-				else
-					last_patches=$(gh_req "$rv_rel/latest" -) || continue
-				fi
-			else
-				if [ "$is_gitlab_cu" = true ]; then
-					last_patches=$(req "$rv_rel/${PATCHES_VER}" -) || continue
-				else
-					last_patches=$(gh_req "$rv_rel/tags/${ver}" -) || continue
-				fi
-			fi
-			if [ "$is_gitlab_cu" = true ]; then
-				if ! last_patches=$(jq -e -r '.assets.links[] | select(.name | (endswith("asc") or endswith("json")) | not) | .name' <<<"$last_patches"); then
-					abort "config_update error: '$last_patches'"
-				fi
-			else
-				if ! last_patches=$(jq -e -r '.assets[] | select(.name | (endswith("asc") or endswith("json")) | not) | .name' <<<"$last_patches"); then
-					abort "config_update error: '$last_patches'"
-				fi
-			fi
-			if [ "$last_patches" ]; then
-				if ! OP=$(grep "^Patches: ${bare_patches_src%%/*}/" build.md | grep -m1 "$last_patches"); then
-					sources["$PATCHES_SRC/$PATCHES_VER"]=1
-					prcfg=true
-					upped+=("$table_name")
-				else
-					echo "$OP" >>"$TEMP_DIR"/skipped
-				fi
-			fi
+		local up=false
+		if _config_update_check_src "$PATCHES_SRC" "$PATCHES_VER"; then up=true; fi
+		if EXTRA_SRC=$(toml_get "$t" extra-patches-source); then
+			EXTRA_VER=$(toml_get "$t" extra-patches-version) || EXTRA_VER="latest"
+			if _config_update_check_src "$EXTRA_SRC" "$EXTRA_VER"; then up=true; fi
 		fi
+		if [ "$up" = true ]; then upped+=("$table_name"); fi
 	done
 	if [ "$prcfg" = true ]; then
 		local query=""
@@ -605,12 +626,15 @@ get_direct_resp() { __DIRECT_APKNAME__=$(awk -F/ '{print $NF}' <<<"$1"); }
 # --------------------------------------------------
 
 patch_apk() {
-	local stock_input=$1 patched_apk=$2 patcher_args=$3 cli_jar=$4 patches_jar=$5
+	local stock_input=$1 patched_apk=$2 patcher_args=$3 cli_jar=$4 patches_jar=$5 extra_patches=${6:-}
 	local tmp_files
 	tmp_files="$(pwd)/$(mktemp -d -p "$TEMP_DIR")"
 
 	local cmd="java -jar '$cli_jar' patch '$stock_input' --purge -o '$patched_apk' -p '$patches_jar' --keystore=ks.keystore \
 --keystore-entry-password=123456789 --keystore-password=123456789 --signer=jhc --keystore-entry-alias=jhc -t '$tmp_files' $patcher_args"
+	# additional patch bundle(s) applied alongside the primary one (e.g. x-shim + Piko)
+	local ep
+	for ep in $extra_patches; do cmd+=" -p '$ep'"; done
 
 	# TODO: remove this later
 	local cli_name
@@ -776,7 +800,7 @@ build_rv() {
 
 	local patcher_args patched_apk build_mode
 	local rv_brand_f=${args[rv_brand],,}
-	rv_brand_f=${rv_brand_f// /-}
+	rv_brand_f=${rv_brand_f//[^a-z0-9]/-} # slug for filenames: spaces, '+', etc. -> '-'
 	if [ "${args[patcher_args]}" ]; then p_patcher_args+=("${args[patcher_args]}"); fi
 	for build_mode in "${build_mode_arr[@]}"; do
 		patcher_args=("${p_patcher_args[@]}")
@@ -817,7 +841,7 @@ build_rv() {
 
 		local apk_output="${BUILD_DIR}/${app_name_l}-${rv_brand_f}-v${version_f}-${arch_f}.apk"
 		if [ "${NORB:-}" != true ] || { [ ! -f "$patched_apk" ] && [ ! -f "$apk_output" ]; }; then
-			if ! patch_apk "$stock_apk_to_patch" "$patched_apk" "${patcher_args[*]}" "${args[cli]}" "${args[ptjar]}"; then
+			if ! patch_apk "$stock_apk_to_patch" "$patched_apk" "${patcher_args[*]}" "${args[cli]}" "${args[ptjar]}" "${args[ptjar_extra]:-}"; then
 				epr "Building '${table}' failed!"
 				return 0
 			fi
@@ -835,7 +859,8 @@ build_rv() {
 		local base_template
 		base_template=$(mktemp -d -p "$TEMP_DIR")
 		cp -a $MODULE_TEMPLATE_DIR/. "$base_template"
-		local upj="${table,,}-update.json"
+		local upj="${table,,}"
+		upj="${upj//\//-}-update.json" # sanitize '/' so the filename matches the module.prop updateJson URL
 
 		module_config "$base_template" "$pkg_name" "$version" "$arch"
 

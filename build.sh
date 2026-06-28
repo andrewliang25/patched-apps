@@ -52,6 +52,7 @@ rm -rf module/bin/*/tmp.*
 for file in "$TEMP_DIR"/*/changelog.md; do
 	[ -f "$file" ] && : >"$file"
 done
+rm -f "$TEMP_DIR"/cli-changelog.md
 
 mkdir -p ${MODULE_TEMPLATE_DIR}/bin/arm64 ${MODULE_TEMPLATE_DIR}/bin/arm ${MODULE_TEMPLATE_DIR}/bin/x86 ${MODULE_TEMPLATE_DIR}/bin/x64
 gh_dl "${MODULE_TEMPLATE_DIR}/bin/arm64/cmpr" "https://github.com/j-hc/cmpr/releases/latest/download/cmpr-arm64-v8a"
@@ -84,6 +85,20 @@ for table_name in $(toml_get_table_names); do
 	read -r patches_jar cli_jar <<<"$PREBUILTS"
 	app_args[cli]=$cli_jar
 	app_args[ptjar]=$patches_jar
+
+	# optional second patch bundle applied alongside the primary one (e.g. x-shim + Piko).
+	# reuses get_prebuilts (handles gitlab:/GitHub + integrations stripping); the CLI is cached
+	# from the call above so it isn't re-downloaded. its 'Patches:' changelog line in build.md
+	# also lets config_update detect updates to this bundle.
+	extra_patches_src=$(toml_get "$t" extra-patches-source) && {
+		extra_patches_ver=$(toml_get "$t" extra-patches-version) || extra_patches_ver="latest"
+		if ! EXTRA="$(get_prebuilts "$cli_src" "$cli_ver" "$extra_patches_src" "$extra_patches_ver")"; then
+			epr "Could not get extra prebuilts"
+			continue
+		fi
+		read -r extra_patches_jar _ <<<"$EXTRA"
+		app_args[ptjar_extra]=$extra_patches_jar
+	} || app_args[ptjar_extra]=""
 	app_args[rv_brand]=$(toml_get "$t" rv-brand) || app_args[rv_brand]=$DEF_RV_BRAND
 
 	app_args[excluded_patches]=$(toml_get "$t" excluded-patches) || app_args[excluded_patches]=""
@@ -127,7 +142,7 @@ for table_name in $(toml_get_table_names); do
 	app_args[dpi]=$(toml_get "$t" dpi) || app_args[dpi]=""
 	table_name_f=${table_name,,}
 	table_name_f=${table_name_f// /-}
-	app_args[module_prop_name]=$(toml_get "$t" module-prop-name) || app_args[module_prop_name]="${table_name_f}-jhc"
+	app_args[module_prop_name]=$(toml_get "$t" module-prop-name) || app_args[module_prop_name]="${table_name_f}-andrew"
 
 	if [ "${app_args[arch]}" = both ]; then
 		app_args[table]="$table_name (arm64-v8a)"
@@ -162,7 +177,7 @@ if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then abort "All builds failed."; fi
 log "\nInstall [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root YouTube and YT Music APKs"
 log "Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach the patched apps from the Play Store when using the Magisk/KernelSU modules"
 log "\n[Patched Apps](https://github.com/andrewliang25/patched-apps)\n"
-log "$(cat "$TEMP_DIR"/*/changelog.md)"
+log "$(cat "$TEMP_DIR"/*/changelog.md "$TEMP_DIR"/cli-changelog.md 2>/dev/null)"
 
 SKIPPED=$(cat "$TEMP_DIR"/skipped 2>/dev/null || :)
 if [ -n "$SKIPPED" ]; then

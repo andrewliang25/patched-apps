@@ -34,17 +34,19 @@ archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.reddit.front
 uptodown-dlurl = "https://reddit-official-app.en.uptodown.com/android"
 dpi = "120-640dpi"
 
-[Twitter-Piko]
+["Twitter/X-Piko+XShim"]
 app-name = "Twitter"
 patches-source = "crimera/piko"
+extra-patches-source = "gitlab:inotia00/x-shim"
 cli-source = "MorpheApp/morphe-cli"
-rv-brand = "Piko"
+rv-brand = "Piko+XShim"
 build-mode = "both"
-version = "11.81.0-release.0"
+version = "auto"
+# module id kept filesystem/id-safe (table name has '/' and '+'); also preserves the prior module identity
+module-prop-name = "twitter-piko-andrew"
 include-stock = "split"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/x-corp/twitter/"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.twitter.android"
-excluded-patches = "'Block redirecting to X Lite'"
 
 [Instagram-Piko]
 app-name = "Instagram"
