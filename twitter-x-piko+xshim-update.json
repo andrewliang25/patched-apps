@@ -1,0 +1,6 @@
+{
+  "version": "v12.2.0-release.0 (patches 3.7.0.mpp)",
+  "versionCode": 13,
+  "zipUrl": "https://github.com/andrewliang25/patched-apps/releases/download/13/twitter-piko-xshim-module-v12.2.0-release.0-all.zip",
+  "changelog": "https://raw.githubusercontent.com/andrewliang25/patched-apps/update/build.md"
+}
