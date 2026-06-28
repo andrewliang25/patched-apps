@@ -3,23 +3,29 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/andrewspatchedapps)
 [![CI](https://github.com/andrewliang25/patched-apps/actions/workflows/ci.yml/badge.svg?event=schedule)](https://github.com/andrewliang25/patched-apps/actions/workflows/ci.yml)
 
-A personal Morphe / Piko / De-Vanced builder that produces non-root APKs and Magisk/KernelSU modules, updated automatically via CI. Built on top of [**j-hc/revanced-magisk-module**](https://github.com/j-hc/revanced-magisk-module) — the build engine, module template, and tooling are j-hc's work; this repo just customizes [`config.toml`](./config.toml) for the apps below.
+A personal Morphe patches builder that produces non-root APKs and Magisk/KernelSU modules, updated automatically via CI. Built on top of [**j-hc/revanced-magisk-module**](https://github.com/j-hc/revanced-magisk-module) — the build engine, module template, and tooling are j-hc's work.
 
 **Grab the [latest release](https://github.com/andrewliang25/patched-apps/releases).**
 
+Every release APK/module is published with [GitHub build provenance attestations](https://docs.github.com/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds) — confirm a file was built by this repo's CI with:
+
+```
+gh attestation verify <file> --repo andrewliang25/patched-apps
+```
+
 ## Apps
 
-| App | Patches | Major features | Output | Notes |
-| --- | --- | --- | --- | --- |
-| <div align="center"><img src="assets/icons/youtube.svg" width="28"><br><b>YouTube</b></div> | Morphe | Ad-free video, SponsorBlock, background playback, Return YouTube Dislike, custom themes | non-root APK + module | APK renamed (MicroG-RE) |
-| <div align="center"><img src="assets/icons/ytmusic.svg" width="28"><br><b>YT Music</b></div> | Morphe | Ad-free, background playback, exclusive-audio mode, minimized playback | non-root APK + module | arm64-v8a; APK renamed (MicroG-RE) |
-| <div align="center"><img src="assets/icons/googlephotos.svg" width="28"><br><b>Google Photos</b></div> | De-Vanced | Unlimited original-quality backup, removes the device/account model lock | non-root APK + module | APK renamed to `app.devanced.google.android.apps.photos` (uses MicroG-RE) |
-| <div align="center"><img src="assets/icons/instagram.svg" width="28"><br><b>Instagram</b></div> | Piko | Block ads/sponsored posts, download photos/videos/reels, hide story "seen", disable typing & read receipts | non-root APK | pinned `430.0.0.53.80`; APK renamed to `app.piko.instagram.android` — **experimental** (APK-only; the mounted module is dropped, see [Piko-settings bug](#instagram-piko-module-piko-settings-wont-open)) |
-| <div align="center"><img src="assets/icons/facebook.svg" width="28"><br><b>Facebook</b></div> | De-Vanced | Block ads/sponsored posts, cleaner feed | non-root APK + module | pinned `490.0.0.63.82`; APK renamed to `app.devanced.facebook.katana` — **experimental** (see [permission conflict](#meta-app-clones-duplicate-permission-conflict)) |
-| <div align="center"><img src="assets/icons/threads.svg" width="28"><br><b>Threads</b></div> | De-Vanced | Block ads, hide suggested threads | non-root APK + module | arm64-v8a; APK renamed to `app.devanced.instagram.barcelona` |
-| <div align="center"><img src="assets/icons/reddit.svg" width="28"><br><b>Reddit</b></div> | Morphe | Block ads, sanitize share links, hide recommendations/premium prompts, custom branding | non-root APK + module | non-root APK renamed to `app.morphe.reddit.frontpage` |
-| <div align="center"><img src="assets/icons/twitter.svg" width="28"><br><b>Twitter / X</b></div> | Piko + x-shim | Hide ads/promoted tweets, download media, restore chronological timeline, hide view counts | non-root APK + module | `version = "auto"` (~12.2.0); patched with **two bundles** — Piko plus [x-shim](https://gitlab.com/inotia00/x-shim) for X 12.x support; non-root APK *not* renamed (Piko ships no rename patch), so it shares the package `com.twitter.android` with the Play Store build |
-| <div align="center"><img src="assets/icons/telegram.svg" width="28"><br><b>Telegram</b></div> | Paresh-Patches | Ghost mode (no read receipts), anti-delete/anti-edit, save restricted media | non-root APK + module | targets the standalone/website build `org.telegram.messenger.web`; not renamed (Paresh ships no rename patch) — already coexists with the Play Store build `org.telegram.messenger` |
+| App | Patches | Major features | non-root APK | module | Notes |
+| --- | --- | --- | :-: | :-: | --- |
+| <div align="center"><img src="assets/icons/youtube.svg" width="28"><br><b>YouTube</b></div> | Morphe | Ad-free video, SponsorBlock, background playback, Return YouTube Dislike, custom themes | ✅ | ✅ | APK renamed (MicroG-RE) |
+| <div align="center"><img src="assets/icons/ytmusic.svg" width="28"><br><b>YT Music</b></div> | Morphe | Ad-free, background playback, exclusive-audio mode, minimized playback | ✅ | ✅ | arm64-v8a; APK renamed (MicroG-RE) |
+| <div align="center"><img src="assets/icons/googlephotos.svg" width="28"><br><b>Google Photos</b></div> | De-Vanced | Unlimited original-quality backup, removes the device/account model lock | ✅ | ✅ | APK renamed to `app.devanced.google.android.apps.photos` (uses MicroG-RE) |
+| <div align="center"><img src="assets/icons/instagram.svg" width="28"><br><b>Instagram</b></div> | Piko | Block ads/sponsored posts, download photos/videos/reels, hide story "seen", disable typing & read receipts | ✅ | ❌ | APK renamed to `app.piko.instagram.android` — **experimental** (APK-only; the mounted module is dropped, see [Piko-settings bug](#instagram-piko-module-piko-settings-wont-open)) |
+| <div align="center"><img src="assets/icons/facebook.svg" width="28"><br><b>Facebook</b></div> | De-Vanced | Block ads/sponsored posts, cleaner feed | ✅ | ✅ | arm64-v8a; pinned `490.0.0.63.82`; APK renamed to `app.devanced.facebook.katana` — **experimental** (see [permission conflict](#meta-app-clones-duplicate-permission-conflict)) |
+| <div align="center"><img src="assets/icons/threads.svg" width="28"><br><b>Threads</b></div> | De-Vanced | Block ads, hide suggested threads | ✅ | ✅ | arm64-v8a; APK renamed to `app.devanced.instagram.barcelona` |
+| <div align="center"><img src="assets/icons/reddit.svg" width="28"><br><b>Reddit</b></div> | Morphe | Block ads, sanitize share links, hide recommendations/premium prompts, custom branding | ✅ | ✅ | non-root APK renamed to `app.morphe.reddit.frontpage` |
+| <div align="center"><img src="assets/icons/twitter.svg" width="28"><br><b>Twitter / X</b></div> | Piko + x-shim | Hide ads/promoted tweets, download media, restore chronological timeline, hide view counts | ✅ | ✅ | Patched with **two bundles** — Piko plus [x-shim](https://gitlab.com/inotia00/x-shim) for X 12.x support; non-root APK *not* renamed (Piko ships no rename patch), so it shares the package `com.twitter.android` with the Play Store build |
+| <div align="center"><img src="assets/icons/telegram.svg" width="28"><br><b>Telegram</b></div> | Paresh-Patches | Ghost mode (no read receipts), anti-delete/anti-edit, save restricted media | ✅ | ✅ | targets the standalone/website build `org.telegram.messenger.web`; not renamed (Paresh ships no rename patch) — already coexists with the Play Store build `org.telegram.messenger` |
 
 Each app is a single config entry that emits two output types:
 
@@ -89,4 +95,4 @@ These builds are provided **as-is, with no warranty**, for personal and educatio
 
 ## Credits
 
-This project is a fork of [j-hc/revanced-magisk-module](https://github.com/j-hc/revanced-magisk-module). All credit for the builder, module template, and helper tooling goes to [j-hc](https://github.com/j-hc). Patches are provided by [ReVanced](https://github.com/ReVanced), [Morphe](https://github.com/MorpheApp), [Piko (crimera)](https://github.com/crimera/piko), [De-Vanced (RookieEnough)](https://github.com/RookieEnough/De-Vanced), and [Paresh-Patches (Paresh-Maheshwari)](https://gitlab.com/Paresh-Maheshwari/paresh-patches).
+This project is a fork of [j-hc/revanced-magisk-module](https://github.com/j-hc/revanced-magisk-module). All credit for the builder, module template, and helper tooling goes to [j-hc](https://github.com/j-hc). Patches are provided by [ReVanced](https://github.com/ReVanced), [Morphe](https://github.com/MorpheApp), [Piko (crimera)](https://github.com/crimera/piko), [x-shim (inotia00)](https://gitlab.com/inotia00/x-shim), [De-Vanced (RookieEnough)](https://github.com/RookieEnough/De-Vanced), and [Paresh-Patches (Paresh-Maheshwari)](https://gitlab.com/Paresh-Maheshwari/paresh-patches).

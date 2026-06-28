@@ -176,7 +176,7 @@ if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then abort "All builds failed."; fi
 
 log "\nInstall [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root YouTube and YT Music APKs"
 log "Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach the patched apps from the Play Store when using the Magisk/KernelSU modules"
-log "\n[Patched Apps](https://github.com/andrewliang25/patched-apps)\n"
+log "\nRepository: [Patched Apps](https://github.com/andrewliang25/patched-apps)\n"
 log "$(cat "$TEMP_DIR"/*/changelog.md "$TEMP_DIR"/cli-changelog.md 2>/dev/null)"
 
 SKIPPED=$(cat "$TEMP_DIR"/skipped 2>/dev/null || :)
