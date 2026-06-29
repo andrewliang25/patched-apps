@@ -40,6 +40,11 @@ extra-patches-version = "latest"                # 'latest', 'dev', or a version 
 app-name = "SomeApp" # if set, release name becomes SomeApp instead of Some-App. default is same as table name, which is 'Some-App' here.
 enabled = true       # whether to build the app. default: true
 build-mode = "apk"   # 'both', 'apk' or 'module'. default: apk
+# (fork-specific) with build-mode = "both", also emit a package-renamed coexisting APK:
+# the apk-mode output is renamed to app.<brand>.<pkg> (brand = rv-brand lowercased, non-
+# alphanumerics stripped) so it installs alongside the official app, while the module keeps
+# the original package to mount over the stock app. default: false
+clone = false
 
 # 'auto' option gets the latest possible version supported by all the included patches
 # 'latest' gets the latest stable without checking patches support. 'beta' gets the latest beta/alpha
@@ -66,6 +71,10 @@ apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
 uptodown-dlurl = "https://spotify.en.uptodown.com/android"
 # direct download url. the url must have point to an apk file with name format shown in this example
 direct-dlurl = "https://website/com.google.android.youtube-20.40.45-all.apk"
+# self-hosted archive.org backend, for apps apkmirror/uptodown won't reliably serve.
+# point at an archive.org folder whose path ends in the package name, holding files named
+# <pkg>-<version>-<arch>.apk[m]; .apkm bundles are merged automatically.
+archive-dlurl = "https://archive.org/download/my-apks/apks/com.google.android.youtube"
 
 module-prop-name = "some-app-module"                       # module prop name.
 dpi = "360-480dpi"                                         # used to select apk variant from apkmirror. default: nodpi
