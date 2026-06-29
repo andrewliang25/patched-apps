@@ -336,6 +336,19 @@ semver_validate() {
 	local ac="${a//[.0-9]/}"
 	[ ${#ac} = 0 ]
 }
+# highest version a single patches bundle supports for $pkg_name (uses $cli_jar/$pkg_name
+# from caller scope); echoes nothing when the bundle reports "Any" (imposes no constraint).
+_highest_ver_for_jar() {
+	local pj=$1 op pcount
+	op=$(patches_list_versions "$cli_jar" "$pj" "$pkg_name") || return 1
+	op=$(sed -n '/Most common compatible versions:/,$p' <<<"$op" | sed '1d' | awk '{$1=$1}1')
+	if [ "$op" = "Any" ]; then return; fi
+	pcount=$(head -1 <<<"$op") pcount=${pcount#*(} pcount=${pcount% *}
+	if [ -z "$pcount" ]; then
+		abort "No patches found for '$pkg_name' in patches '$pj'"
+	fi
+	grep -F "($pcount patch" <<<"$op" | sed 's/ (.* patch.*//' | get_highest_ver || return 1
+}
 get_patch_last_supported_ver() {
 	local list_patches=$1 pkg_name=$2 inc_sel=$3 _exc_sel=$4 _exclusive=$5 # TODO: resolve using all of these
 	local op
@@ -356,14 +369,17 @@ get_patch_last_supported_ver() {
 			return
 		fi
 	fi
-	op=$(patches_list_versions "$cli_jar" "$patches_jar" "$pkg_name") || return 1
-	op=$(sed -n '/Most common compatible versions:/,$p' <<<"$op" | sed '1d' | awk '{$1=$1}1')
-	if [ "$op" = "Any" ]; then return; fi
-	pcount=$(head -1 <<<"$op") pcount=${pcount#*(} pcount=${pcount% *}
-	if [ -z "$pcount" ]; then
-		abort "No patches found for '$pkg_name' in patches '$patches_jar'"
-	fi
-	grep -F "($pcount patch" <<<"$op" | sed 's/ (.* patch.*//' | get_highest_ver || return 1
+	# resolve the version supported by the primary bundle and every extra-patches bundle,
+	# then take the lowest ceiling so the picked version satisfies all bundles applied
+	# together (patches are downward-compatible, so the lower max is safe for both).
+	local vers ej
+	vers=$(_highest_ver_for_jar "$patches_jar") || return 1
+	for ej in ${args[ptjar_extra]:-}; do
+		vers+=$'\n'$(_highest_ver_for_jar "$ej") || return 1
+	done
+	vers=$(grep -v '^$' <<<"$vers" || :)
+	if [ -z "$vers" ]; then return; fi
+	sort -s -t- -k1,1V <<<"$vers" | head -1
 }
 
 patches_list_versions() {
