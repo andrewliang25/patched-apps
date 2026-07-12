@@ -1,0 +1,30 @@
+{
+  "Facebook-DeVanced": {
+    "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
+  },
+  "Instagram-Piko": {
+    "crimera/piko": "patches-3.7.0.mpp"
+  },
+  "Music-Morphe": {
+    "MorpheApp/morphe-patches": "patches-1.34.0.mpp"
+  },
+  "Photos-DeVanced": {
+    "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
+  },
+  "Reddit-Morphe": {
+    "MorpheApp/morphe-patches": "patches-1.34.0.mpp"
+  },
+  "Telegram-Paresh": {
+    "gitlab:Paresh-Maheshwari/paresh-patches": "patches-1.19.0.mpp"
+  },
+  "Threads-DeVanced": {
+    "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
+  },
+  "Twitter/X-Piko+XShim": {
+    "crimera/piko": "patches-3.7.0.mpp",
+    "gitlab:inotia00/x-shim": "patches-1.7.0.mpp"
+  },
+  "YouTube-Morphe": {
+    "MorpheApp/morphe-patches": "patches-1.34.0.mpp"
+  }
+}
