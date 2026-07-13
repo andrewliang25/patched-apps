@@ -26,5 +26,8 @@
   },
   "YouTube-Morphe": {
     "MorpheApp/morphe-patches": "patches-1.34.0.mpp"
+  },
+  "Messenger-DeVanced": {
+    "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
   }
 }
