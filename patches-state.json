@@ -29,5 +29,8 @@
   },
   "Messenger-DeVanced": {
     "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
+  },
+  "LINE-Andrew": {
+    "andrewliang25/morphe-patches": "patches-1.0.0.mpp"
   }
 }
