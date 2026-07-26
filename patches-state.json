@@ -6,13 +6,13 @@
     "crimera/piko": "patches-3.8.0.mpp"
   },
   "Music-Morphe": {
-    "MorpheApp/morphe-patches": "patches-1.36.0.mpp"
+    "MorpheApp/morphe-patches": "patches-1.37.0.mpp"
   },
   "Photos-DeVanced": {
     "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
   },
   "Reddit-Morphe": {
-    "MorpheApp/morphe-patches": "patches-1.36.0.mpp"
+    "MorpheApp/morphe-patches": "patches-1.37.0.mpp"
   },
   "Telegram-Paresh": {
     "gitlab:Paresh-Maheshwari/paresh-patches": "patches-1.19.0.mpp"
