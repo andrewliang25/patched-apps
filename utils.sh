@@ -436,7 +436,7 @@ _supported_vers_for_jar() {
 # highest-first (one per line); empty when no bundle constrains the version, non-zero exit on a
 # hard list-patches failure. The caller ('auto' mode) takes line 1 as the pick and, if that
 # version can't be downloaded from any source, walks down the rest (step-down) — so a version a
-# bundle over-declares (e.g. Paresh listing Telegram-web 12.9.1, which has no web APK) falls back
+# bundle over-declares (a version listed as compatible but published nowhere) falls back
 # to the highest version that is actually obtainable. Name kept for upstream-merge stability
 # though it now returns the whole ranked list, not just the last (=line 1) version.
 get_patch_last_supported_ver() {
