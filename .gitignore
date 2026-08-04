@@ -11,3 +11,4 @@ failed-builds.txt
 cmpr
 *-temporary-files
 local-build-out/
+.DS_Store
