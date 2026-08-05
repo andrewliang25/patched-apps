@@ -1,6 +1,6 @@
 {
-  "version": "v563.0.0.47.86 (patches 1.0.4.mpp)",
-  "versionCode": 21,
-  "zipUrl": "https://github.com/andrewliang25/patched-apps/releases/download/21/messenger-de-vanced-module-v563.0.0.47.86-arm64-v8a.zip",
+  "version": "v563.0.0.47.86 (patches 1.1.0.mpp)",
+  "versionCode": 33,
+  "zipUrl": "https://github.com/andrewliang25/patched-apps/releases/download/33/messenger-de-vanced-module-v563.0.0.47.86-arm64-v8a.zip",
   "changelog": "https://raw.githubusercontent.com/andrewliang25/patched-apps/update/build.md"
 }

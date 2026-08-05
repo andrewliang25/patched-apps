@@ -6,7 +6,7 @@
     "MorpheApp/morphe-patches": "patches-1.38.0.mpp"
   },
   "Photos-DeVanced": {
-    "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
+    "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
   },
   "Telegram-Paresh": {
     "gitlab:Paresh-Maheshwari/paresh-patches": "patches-1.19.1-dev.1.mpp"
@@ -19,10 +19,10 @@
     "MorpheApp/morphe-patches": "patches-1.38.0.mpp"
   },
   "Messenger-DeVanced": {
-    "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
+    "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
   },
   "Facebook-DeVanced": {
-    "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
+    "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
   },
   "LINE-Andrew": {
     "andrewliang25/morphe-patches": "patches-1.4.0.mpp"
@@ -31,6 +31,6 @@
     "MorpheApp/morphe-patches": "patches-1.38.0.mpp"
   },
   "Threads-DeVanced": {
-    "RookieEnough/De-Vanced": "patches-1.0.4.mpp"
+    "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
   }
 }
