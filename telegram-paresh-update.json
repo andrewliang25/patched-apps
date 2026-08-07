@@ -1,6 +1,6 @@
 {
-  "version": "v12.9.1 (patches dev.1.mpp)",
-  "versionCode": 28,
-  "zipUrl": "https://github.com/andrewliang25/patched-apps/releases/download/28/telegram-paresh-module-v12.9.1-all.zip",
+  "version": "v12.8.3 (patches dev.1.mpp)",
+  "versionCode": 34,
+  "zipUrl": "https://github.com/andrewliang25/patched-apps/releases/download/34/telegram-paresh-module-v12.8.3-all.zip",
   "changelog": "https://raw.githubusercontent.com/andrewliang25/patched-apps/update/build.md"
 }
