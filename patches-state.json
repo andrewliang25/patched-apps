@@ -8,9 +8,6 @@
   "Photos-DeVanced": {
     "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
   },
-  "Telegram-Paresh": {
-    "gitlab:Paresh-Maheshwari/paresh-patches": "patches-1.20.0-dev.1.mpp"
-  },
   "Twitter/X-Piko+XShim": {
     "crimera/piko": "patches-3.8.0.mpp",
     "gitlab:inotia00/x-shim": "patches-1.7.0.mpp"
