@@ -3,7 +3,7 @@
     "crimera/piko": "patches-3.8.0.mpp"
   },
   "Music-Morphe": {
-    "MorpheApp/morphe-patches": "patches-1.39.0.mpp"
+    "MorpheApp/morphe-patches": "patches-1.39.1.mpp"
   },
   "Photos-DeVanced": {
     "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
@@ -16,7 +16,7 @@
     "gitlab:inotia00/x-shim": "patches-1.7.0.mpp"
   },
   "YouTube-Morphe": {
-    "MorpheApp/morphe-patches": "patches-1.39.0.mpp"
+    "MorpheApp/morphe-patches": "patches-1.39.1.mpp"
   },
   "Messenger-DeVanced": {
     "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
@@ -25,10 +25,10 @@
     "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
   },
   "LINE-Andrew": {
-    "andrewliang25/morphe-patches": "patches-1.4.0.mpp"
+    "andrewliang25/morphe-patches": "patches-1.5.0.mpp"
   },
   "Reddit-Morphe": {
-    "MorpheApp/morphe-patches": "patches-1.39.0.mpp"
+    "MorpheApp/morphe-patches": "patches-1.39.1.mpp"
   },
   "Threads-DeVanced": {
     "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
