@@ -10,7 +10,7 @@ Every APK/module is published with [GitHub build provenance attestations](https:
 ```  
 gh attestation verify <file> --repo andrewliang25/patched-apps  
 ```  
-Patches: RookieEnough/patches-1.2.0.mpp  
-[Changelog](https://github.com/RookieEnough/De-Vanced/releases/tag/v1.2.0)
+Patches: RookieEnough/patches-1.2.1.mpp  
+[Changelog](https://github.com/RookieEnough/De-Vanced/releases/tag/v1.2.1)
 
 CLI: MorpheApp/morphe-desktop-1.13.0-all.jar    
