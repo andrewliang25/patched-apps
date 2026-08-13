@@ -1,5 +1,4 @@
-LINE-Andrew: 26.11.0  
-Messenger-DeVanced: 573.0.0.44.88  
+Threads-Chiggi: 434.0.0.41.74  
 
 Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs  
 Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach patched apps from Play Store  
@@ -10,10 +9,7 @@ Every APK/module is published with [GitHub build provenance attestations](https:
 ```  
 gh attestation verify <file> --repo andrewliang25/patched-apps  
 ```  
-Patches: andrewliang25/patches-1.6.0.mpp  
-[Changelog](https://github.com/andrewliang25/morphe-patches/releases/tag/v1.6.0)
-
-Patches: RookieEnough/patches-1.2.1.mpp  
-[Changelog](https://github.com/RookieEnough/De-Vanced/releases/tag/v1.2.1)
+Patches: durgesh0505/patches-1.18.0.mpp  
+[Changelog](https://github.com/durgesh0505/chiggi_morphe_patches/releases/tag/v1.18.0)
 
 CLI: MorpheApp/morphe-desktop-1.13.0-all.jar    

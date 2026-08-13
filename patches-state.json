@@ -32,5 +32,8 @@
   },
   "Threads-DeVanced": {
     "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
+  },
+  "Threads-Chiggi": {
+    "durgesh0505/chiggi_morphe_patches": "patches-1.18.0.mpp"
   }
 }
