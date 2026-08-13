@@ -73,6 +73,16 @@ archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.facebook.orc
 apkmirror-dlurl = "https://www.apkmirror.com/apk/facebook-2/messenger/"
 
 [Threads-DeVanced]
+# Disabled: De-Vanced dropped Threads support -- patches-1.2.1.mpp carries no patch for
+# com.instagram.barcelona, so build_rv's 'auto' version resolution hits
+# `abort "No patches found for 'com.instagram.barcelona'"`. That abort runs in a background
+# job, so it kills only its own subshell (silently, without record_failure) -- but it leaves
+# Threads un-recorded in patches-state.json, so config_update selects it every day, and on any
+# day it is the only app due for a rebuild the build produces no artifact and build.sh exits
+# via `abort "All builds failed."` -> red CI run.
+# Kept configured (and its patches-state.json entry + threads-devanced-update.json kept intact)
+# so re-enabling is a one-line revert if De-Vanced re-introduces Threads in a later bundle.
+enabled = false
 app-name = "Threads"
 patches-source = "RookieEnough/De-Vanced"
 cli-source = "MorpheApp/morphe-cli"
