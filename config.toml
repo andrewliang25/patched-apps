@@ -97,13 +97,13 @@ apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
 uptodown-dlurl = "https://google-photos.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.google.android.apps.photos"
 
-["Twitter/X-Piko+XShim"]
+["Twitter/X-Piko"]
 app-name = "Twitter"
 patches-source = "crimera/piko"
-extra-patches-source = "gitlab:inotia00/x-shim"
 cli-source = "MorpheApp/morphe-cli"
-rv-brand = "Piko+XShim"
-build-mode = "apk"
+rv-brand = "Piko"
+build-mode = "both"
+include-stock = "auto"
 version = "auto"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/x-corp/twitter/"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.twitter.android"
