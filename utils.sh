@@ -37,6 +37,10 @@ toml_get_table_main() { jq -r -e 'to_entries | map(select(.value | type != "obje
 toml_get_table() { jq -r -e ".\"${1}\"" <<<"$__TOML__"; }
 # canonical *-update.json basename for a table name: lowercase, '/' -> '-'
 update_json_name() { local s=${1,,}; echo "${s//\//-}-update.json"; }
+# canonical magisk module id for a table name: lowercase, then every character
+# outside [a-z0-9._-] (spaces, '/', '+', ...) folded to '-'. magisk validates the
+# id against ^[a-zA-Z][a-zA-Z0-9._-]+$ at flash time and refuses the zip otherwise.
+module_id_name() { local s=${1,,}; echo "${s//[!a-z0-9._-]/-}"; }
 toml_get() {
 	local op quote_placeholder=$'\001'
 	op=$(jq -r ".\"${2}\" | values" <<<"$1")

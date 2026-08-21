@@ -179,9 +179,11 @@ for table_name in $(toml_get_table_names); do
 
 	app_args[pkg_name]=$(toml_get "$t" pkg-name) || app_args[pkg_name]=""
 	app_args[dpi]=$(toml_get "$t" dpi) || app_args[dpi]=""
-	table_name_f=${table_name,,}
-	table_name_f=${table_name_f// /-}
+	table_name_f=$(module_id_name "$table_name")
 	app_args[module_prop_name]=$(toml_get "$t" module-prop-name) || app_args[module_prop_name]="${table_name_f}-andrew"
+	if ! [[ ${app_args[module_prop_name]} =~ ^[a-zA-Z][a-zA-Z0-9._-]+$ ]]; then
+		abort "invalid module id '${app_args[module_prop_name]}' for '$table_name' (magisk requires ^[a-zA-Z][a-zA-Z0-9._-]+\$)"
+	fi
 
 	if [ "${app_args[arch]}" = both ]; then
 		app_args[table]="$table_name (arm64-v8a)"
