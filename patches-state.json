@@ -34,6 +34,9 @@
     "RookieEnough/De-Vanced": "patches-1.1.0.mpp"
   },
   "Threads-Chiggi": {
-    "durgesh0505/chiggi_morphe_patches": "patches-1.18.0.mpp"
+    "durgesh0505/chiggi_morphe_patches": "patches-1.19.0.mpp"
+  },
+  "Twitter/X-Piko": {
+    "crimera/piko": "patches-3.8.0.mpp"
   }
 }
