@@ -30,11 +30,12 @@ patches-version = "v2.160.0" # 'latest', 'dev', or a version number. default: "l
 cli-version = "v5.0.0"       # 'latest', 'dev', or a version number. default: "latest"
 
 # optional: an additional patch bundle applied alongside patches-source in the same patch run
-# (extra '-p' flag), e.g. inotia00/x-shim together with crimera/piko. supports 'gitlab:' and
-# GitHub like patches-source. its release is also tracked by the daily update check, so a new
-# version of this bundle triggers a rebuild on its own.
-extra-patches-source = "gitlab:inotia00/x-shim" # default: unset
-extra-patches-version = "latest"                # 'latest', 'dev', or a version number. default: "latest"
+# (extra '-p' flag), for a shim/compat bundle that has to be layered on a primary one. supports
+# 'gitlab:' and GitHub like patches-source. its release is also tracked by the daily update
+# check, so a new version of this bundle triggers a rebuild on its own.
+# no app currently sets this (Twitter dropped inotia00/x-shim once Piko stopped needing it).
+extra-patches-source = "gitlab:owner/shim-patches" # default: unset
+extra-patches-version = "latest"                   # 'latest', 'dev', or a version number. default: "latest"
 
 [Some-App]
 app-name = "SomeApp" # if set, release name becomes SomeApp instead of Some-App. default is same as table name, which is 'Some-App' here.
