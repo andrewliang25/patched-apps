@@ -27,14 +27,14 @@ Contributors: please [sign your commits](CONTRIBUTING.md#signing-your-commits) s
 | <div align="center"><img src="assets/icons/messenger.svg" width="28"><br><b>Messenger</b></div> | De-Vanced | Remove Meta AI, hide the Facebook tab, hide inbox subtabs, disable typing indicator | ✅ | ✅ | arm64-v8a; tracks De-Vanced's supported build (currently `563.0.0.47.86`); APK renamed to `app.devanced.facebook.orca` — **experimental** (see [permission conflict](#meta-app-clones-duplicate-permission-conflict)); `Hide inbox ads` excluded (fingerprint gone from current builds) |
 | <div align="center"><img src="assets/icons/threads.svg" width="28"><br><b>Threads</b></div> | Chiggi | Hide ads, remove the AD_ID (advertising ID) permission | ✅ | ✅ | arm64-v8a; APK renamed to `app.chiggi.instagram.barcelona` — **experimental** (see [permission conflict](#meta-app-clones-duplicate-permission-conflict)). Moved off De-Vanced, which [dropped Threads](#threads-moved-from-de-vanced-to-chiggi) |
 | <div align="center"><img src="assets/icons/reddit.svg" width="28"><br><b>Reddit</b></div> | Morphe | Block ads, sanitize share links, hide recommendations/premium prompts, custom branding | ✅ | ✅ | non-root APK renamed to `app.morphe.reddit.frontpage` |
-| <div align="center"><img src="assets/icons/twitter.svg" width="28"><br><b>Twitter / X</b></div> | Piko | Hide ads/promoted tweets, download media, restore chronological timeline, hide view counts | ✅ | ❌ | APK-only, not cloned — shares `com.twitter.android` with the Play Store build, so uninstall the official X app first (the mounted module was dropped over runtime issues) |
+| <div align="center"><img src="assets/icons/twitter.svg" width="28"><br><b>Twitter / X</b></div> | Piko | Hide ads/promoted tweets, download media, restore chronological timeline, hide view counts | ✅ | ✅ | not cloned — both outputs keep `com.twitter.android`, so uninstall the official X app first for the non-root APK. The [module is back](#twitter--x-module-re-enabled) after being dropped over runtime issues |
 | <div align="center"><img src="assets/icons/telegram.svg" width="28"><br><b>Telegram</b></div> | Paresh-Patches | Ghost mode (no read receipts), anti-delete/anti-edit, save restricted media | ✅ | ✅ | targets the standalone/website build `org.telegram.messenger.web`; not renamed (Paresh ships no rename patch) — already coexists with the Play Store build `org.telegram.messenger` |
 | <div align="center"><img src="assets/icons/line.svg" width="28"><br><b>LINE</b></div> | Andrew | Hide ads/banners, remove VOOM & Wallet / LINE TODAY tabs, hide Home modules, keep chats unread (no read receipts), open links externally | ✅ | ✅ | arm64-v8a; self-hosted stock (archive.org); not renamed — shares `jp.naver.line.android` with the Play Store build (uninstall the official app first for the non-root APK) |
 
 Each app is a single config entry that emits two output types:
 
 * **non-root APK** — install directly, no root. Most apps' APKs are package-renamed (a `app.<patch>.<pkg>` "clone", or the MicroG-RE variant for Google apps) so they install *alongside* the official app rather than replacing it.
-* **module** — Magisk/KernelSU module that mounts the patched APK over the stock app. Keeps the original package, so it needs root and the stock app installed. (Instagram and Twitter/X ship as APK-only — their modules were dropped.)
+* **module** — Magisk/KernelSU module that mounts the patched APK over the stock app. Keeps the original package, so it needs root and the stock app installed. (Instagram ships as APK-only — its module was dropped.)
 
 > **Experimental:** Instagram and Facebook are integrity-protected (pairip) apps; their patched builds may not run on all setups.
 
@@ -74,6 +74,14 @@ Twitter/X is now patched with **Piko alone**. Piko's README states that starting
 * **The release asset was renamed**, `twitter-piko-xshim-*` → `twitter-piko-*`. Update any download scripts that match on the old name.
 * **No reinstall needed.** The package (`com.twitter.android`) and the signing key are unchanged, so the new APK installs over the old one as a normal upgrade.
 
+### Twitter / X: module re-enabled
+
+Twitter/X ships a **Magisk/KernelSU module** again, alongside the non-root APK. The runtime issues that got the mounted build dropped no longer reproduce on current Piko builds. (Instagram's module stays dropped — its [Piko-settings bug](#instagram-piko-module-piko-settings-wont-open) is unchanged.)
+
+* **The module keeps `com.twitter.android`** and mounts over stock X, so it needs root, stock X installed, and X on the Zygisk DenyList.
+* **Switching from the non-root APK? Uninstall it first.** Twitter isn't cloned, so both outputs use the same package — and the APK is signed with this repo's throwaway key, so Android refuses to install stock X over it (signature mismatch). Uninstalling clears app data.
+* **Stock ships as the original signed splits** (`include-stock = "auto"` resolves to `split` for X's `.apkm` source), keeping X's genuine signature intact for its server-side checks.
+
 ## Building locally
 
 ### On Termux
@@ -100,7 +108,7 @@ Twitter and Instagram use [Piko](https://github.com/crimera/piko); Facebook, Mes
 
 The config carries only brief inline notes; here's what the non-obvious settings mean:
 
-* **`clone = true`** (Reddit, Facebook, Messenger, Threads, Photos) — with `build-mode = "both"`, the non-root APK is package-renamed to `app.<patch>.<pkg>` so it installs alongside the official app, while the module keeps the original package to mount over stock. Instagram is `clone = true` but APK-only ([Piko-settings bug](#instagram-piko-module-piko-settings-wont-open)); Twitter is APK-only and not cloned.
+* **`clone = true`** (Reddit, Facebook, Messenger, Threads, Photos) — with `build-mode = "both"`, the non-root APK is package-renamed to `app.<patch>.<pkg>` so it installs alongside the official app, while the module keeps the original package to mount over stock. Instagram is `clone = true` but APK-only ([Piko-settings bug](#instagram-piko-module-piko-settings-wont-open)); Twitter ships both outputs but is not cloned (Piko's `Clone` patch does not cover `com.twitter.android`).
 * **Self-hosted stock APKs (archive.org)** — Facebook, Messenger, Twitter, Instagram, Threads, and LINE are mirrored on a self-hosted archive.org item because apkmirror 403s (and uptodown doesn't reliably serve) their builds. They track `auto`, falling back to each app's secondary source if a newer resolved version isn't mirrored yet.
 * **`enable-module-update`** — set `false` to stop the modules from receiving in-app updates.
 
