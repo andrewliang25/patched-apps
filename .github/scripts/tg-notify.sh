@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Posts a Markdown message to Telegram.
-# Reads TG_TOKEN + TG_CHAT from the environment; message from $1 or stdin.
-# No-ops (exit 0) when either credential is empty, so callers can run unconditionally.
+# Post a Markdown message to Telegram.
+# The script reads TG_TOKEN and TG_CHAT from the environment. The message comes from $1 or stdin.
+# If either value is empty, the script does nothing and exits 0. Thus a caller can always run it.
 set -u
 
 TOKEN="${TG_TOKEN:-}"

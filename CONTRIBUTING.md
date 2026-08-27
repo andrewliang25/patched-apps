@@ -2,46 +2,45 @@
 
 ## Signing your commits
 
-Commits to this repo should be **signed** so they show a green **Verified** badge on
-GitHub. We use **SSH commit signing** — you can reuse the same SSH key you already use to
-push to GitHub; no GPG toolchain is needed.
+Sign your commits to this repo, so that GitHub shows a green **Verified** badge. This repo uses
+**SSH commit signing**. You can use the same SSH key that you use to push to GitHub. A GPG
+toolchain is not necessary.
 
-> Signing is enabled but **not enforced** — unsigned commits are still accepted. Please sign
-> anyway. CI-authored commits on the `update` branch (the daily `github-actions[bot]` version
-> bumps) are intentionally left unsigned and are out of scope here.
+> Signing is enabled, but it is **not enforced**, and the repo still accepts unsigned commits.
+> Sign your commits anyway. The commits that CI writes on the `update` branch, that is the daily
+> version bumps of `github-actions[bot]`, stay unsigned on purpose.
 
 ### 1. Configure git to sign with SSH
 
-Run inside your clone (drop the repo scope by adding `--global` if you'd rather sign in every
-repo):
+Run these commands in your clone. To sign in every repo, add `--global` to each command:
 
 ```bash
 git config gpg.format ssh
-git config user.signingkey ~/.ssh/id_rsa.pub   # your public key (any type: rsa/ed25519)
+git config user.signingkey ~/.ssh/id_rsa.pub   # your public key, of any type (rsa, ed25519)
 git config commit.gpgsign true
-git config tag.gpgsign true                     # optional: also sign annotated tags
+git config tag.gpgsign true                     # optional. It also signs annotated tags.
 ```
 
 ### 2. Register the key on GitHub as a *Signing Key*
 
-A key added for **authentication** is **not** automatically usable for signing — add it again
-with the signing type:
+A key that you added for **authentication** cannot sign commits. Add the key again with the
+signing type:
 
 ```bash
 gh ssh-key add ~/.ssh/id_rsa.pub --type signing --title "commit-signing"
 ```
 
-…or via **GitHub → Settings → SSH and GPG keys → New SSH key → Key type: _Signing Key_**.
+You can also use **GitHub → Settings → SSH and GPG keys → New SSH key → Key type: _Signing Key_**.
 
-> The `gh ssh-key add --type signing` call needs the `admin:ssh_signing_key` token scope:
-> `gh auth refresh -h github.com -s admin:ssh_signing_key` (or just use the web UI above).
+> The `gh ssh-key add --type signing` command needs the `admin:ssh_signing_key` token scope. To
+> add it, run `gh auth refresh -h github.com -s admin:ssh_signing_key`, or use the web page above.
 
-### 3. Make sure your commit email is verified on GitHub — common gotcha
+### 3. Make sure that GitHub has your commit email as verified
 
-GitHub only shows **Verified** when the commit's committer email is a **verified email on the
-account that owns the signing key** (GitHub → Settings → Emails). If it isn't, the signature is
-still cryptographically valid but shows **Unverified**. Either verify that email, or commit
-with your account's `@users.noreply.github.com` address:
+GitHub shows **Verified** only when the committer email of the commit is a **verified email on
+the account that owns the signing key** (GitHub → Settings → Emails). If it is not, the signature
+stays cryptographically correct, but GitHub shows **Unverified**. Verify that email, or commit
+with the `@users.noreply.github.com` address of your account:
 
 ```bash
 git config user.email <you>@users.noreply.github.com
@@ -49,8 +48,8 @@ git config user.email <you>@users.noreply.github.com
 
 ### 4. (Optional) Verify signatures locally
 
-`git log --show-signature` needs an `allowed_signers` file to print *Good signature* locally
-(GitHub's badge doesn't need this):
+To print *Good signature* on your machine, `git log --show-signature` needs an `allowed_signers`
+file. The badge on GitHub does not need this file:
 
 ```bash
 mkdir -p ~/.config/git
@@ -62,6 +61,6 @@ git config --global gpg.ssh.allowedSignersFile ~/.config/git/allowed_signers
 Then:
 
 ```bash
-git commit --allow-empty -m "test: signed commit"   # then: git reset --hard HEAD~1 to drop it
-git log --show-signature -1                          # -> Good "git" signature for <you>
+git commit --allow-empty -m "test: signed commit"   # to remove it: git reset --hard HEAD~1
+git log --show-signature -1                          # prints: Good "git" signature for <you>
 ```

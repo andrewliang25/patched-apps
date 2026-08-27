@@ -146,7 +146,7 @@ fi
 set_perm "$MODPATH/base.apk" 1000 1000 644 u:object_r:apk_data_file:s0
 
 ui_print "* Mounting $PKG_NAME"
-# move out the apk from /data/adb/modules/.. to /data/adb/rvhc to not trip some root detections
+# Move the apk from /data/adb/modules/.. to /data/adb/rvhc, to not trigger some root detections.
 mkdir -p "/data/adb/rvhc"
 mv -f "$MODPATH/base.apk" "$RVPATH"
 
