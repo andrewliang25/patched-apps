@@ -124,16 +124,22 @@ archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.instagram.an
 apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram/"
 uptodown-dlurl = "https://instagram.en.uptodown.com/android"
 
-[Telegram-Paresh]
+[Telegram-Rushi]
 app-name = "Telegram"
-patches-source = "gitlab:Paresh-Maheshwari/paresh-patches"
+patches-source = "rushiranpise/morphe-patches"
 cli-source = "MorpheApp/morphe-cli"
-rv-brand = "Paresh"
+rv-brand = "Rushi"
 build-mode = "both"
+# the Play Store package. No 'clone' — the bundle ships no rename patch matching it, so the
+# non-root apk replaces the official install instead of coexisting with it.
 include-stock = "auto"
+# the mirrored build is the arm64 + 480dpi variant of 12.10.0 (code 70242) — the build the
+# bundle's fingerprints were cut against; the universal 12.10.0 upload is a later re-release.
+arch = "arm64-v8a"
+dpi = "480dpi"
+# no uptodown: its 'telegram' slug is the standalone org.telegram.messenger.web build.
+archive-dlurl = "https://archive.org/download/andrews-apks/apks/org.telegram.messenger"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/telegram-fz-llc/telegram/"
-uptodown-dlurl = "https://telegram.en.uptodown.com/android"
-archive-dlurl = "https://archive.org/download/andrews-apks/apks/org.telegram.messenger.web"
 
 [LINE-Andrew]
 app-name = "LINE"
