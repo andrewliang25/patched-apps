@@ -157,11 +157,11 @@ get_prebuilts() {
 				resp=$(req "$rv_rel" -) || return 1
 				if [ "$ver" = "latest" ]; then resp=$(jq -e '.[0]' <<<"$resp") || return 1; fi
 				tag_name=$(jq -r '.tag_name' <<<"$resp") || return 1
-				matches=$(jq -e '.assets.links | map(select(.name | (endswith("asc") or endswith("json")) | not))' <<<"$resp") || return 1
+				matches=$(jq -e '.assets.links | map(select(.name | (endswith("asc") or endswith("json") or endswith("txt")) | not))' <<<"$resp") || return 1
 			else
 				resp=$(gh_req "$rv_rel" -) || return 1
 				tag_name=$(jq -r '.tag_name' <<<"$resp") || return 1
-				matches=$(jq -e '.assets | map(select(.name | (endswith("asc") or endswith("json")) | not))' <<<"$resp") || return 1
+				matches=$(jq -e '.assets | map(select(.name | (endswith("asc") or endswith("json") or endswith("txt")) | not))' <<<"$resp") || return 1
 			fi
 			if [ "$(jq 'length' <<<"$matches")" -gt 1 ]; then
 				local matches_new
@@ -277,13 +277,13 @@ _latest_patches_name() {
 			resp=$(gh_req "$rv_rel/tags/${PATCHES_VER}" -) || return 1
 		fi
 	fi
-	# select the same asset get_prebuilts picks: drop .asc/.json, and if that leaves >1 prefer
+	# select the same asset get_prebuilts picks: drop .asc/.json/.txt (checksums), and if that leaves >1 prefer
 	# the non "-dev" build when doing so is unambiguous, then take the first.
 	local matches
 	if [ "$is_gitlab_cu" = true ]; then
-		matches=$(jq -e '.assets.links | map(select(.name | (endswith("asc") or endswith("json")) | not))' <<<"$resp") || return 1
+		matches=$(jq -e '.assets.links | map(select(.name | (endswith("asc") or endswith("json") or endswith("txt")) | not))' <<<"$resp") || return 1
 	else
-		matches=$(jq -e '.assets | map(select(.name | (endswith("asc") or endswith("json")) | not))' <<<"$resp") || return 1
+		matches=$(jq -e '.assets | map(select(.name | (endswith("asc") or endswith("json") or endswith("txt")) | not))' <<<"$resp") || return 1
 	fi
 	if [ "$(jq 'length' <<<"$matches")" -gt 1 ]; then
 		local matches_new
@@ -414,7 +414,11 @@ _sort_vers_desc() {
 _supported_vers_for_jar() {
 	local pj=$1 lenient=${2:-false} is_experimental=${3:-false} op pcount
 	op=$(patches_list_versions "$cli_jar" "$pj" "$pkg_name" "$is_experimental") || return 1
-	op=$(sed -n '/Most common compatible versions:/,$p' <<<"$op" | sed '1d' | awk '{$1=$1}1')
+	# morphe-cli >=1.14.0 appends ' [versionCodes: ARM64_V8A=..., ...]' to each version line for
+	# bundles whose targets declare version codes (De-Vanced, Piko, rushiranpise). Strip it or the
+	# resolved 'version' carries that suffix and no download source can match it.
+	op=$(sed -n '/Most common compatible versions:/,$p' <<<"$op" |
+		sed '1d;s/ \[versionCodes:[^]]*\]//' | awk '{$1=$1}1')
 	if [ "$op" = "Any" ]; then return; fi
 	if [ -z "$op" ]; then
 		# list-versions produced no version tier. Either the package genuinely has no patches in
@@ -440,9 +444,9 @@ _supported_vers_for_jar() {
 # highest-first (one per line); empty when no bundle constrains the version, non-zero exit on a
 # hard list-patches failure. The caller ('auto' mode) takes line 1 as the pick and, if that
 # version can't be downloaded from any source, walks down the rest (step-down) — so a version a
-# bundle over-declares (e.g. Paresh listing Telegram-web 12.9.1, which has no web APK) falls back
-# to the highest version that is actually obtainable. Name kept for upstream-merge stability
-# though it now returns the whole ranked list, not just the last (=line 1) version.
+# bundle over-declares (historically: Paresh listing Telegram-web 12.9.1, which had no web APK)
+# falls back to the highest version that is actually obtainable. Name kept for upstream-merge
+# stability though it now returns the whole ranked list, not just the last (=line 1) version.
 get_patch_last_supported_ver() {
 	local list_patches=$1 pkg_name=$2 inc_sel=$3 is_experimental=$4
 	local op
