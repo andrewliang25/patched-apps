@@ -58,10 +58,10 @@ rv-brand = "De-Vanced"
 build-mode = "both"
 include-stock = "auto"
 clone = true
-# orca patches impose no version ceiling, so 'auto' falls back to the latest downloadable build.
+# The orca patches set no version limit, so 'auto' falls back to the latest downloadable build.
 version = "auto"
 arch = "arm64-v8a"
-# fingerprint gone from Messenger 563.x; drop once De-Vanced re-fingerprints it.
+# The fingerprint is gone from Messenger 563.x. Remove this line after De-Vanced fixes the patch.
 excluded-patches = "'Hide inbox ads'"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.facebook.orca"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/facebook-2/messenger/"
@@ -76,11 +76,12 @@ include-stock = "auto"
 clone = true
 version = "auto"
 arch = "arm64-v8a"
-# both renames are default-ON here; 'Change package name' must stay out of excluded-patches
-# (collides with clone's apk-mode -e), so the module disables it on its own.
+# Both rename patches are on by default here. 'Change package name' must stay out of
+# excluded-patches, because it collides with the apk-mode -e of clone. Thus the module
+# turns it off separately.
 excluded-patches = "'Change app name'"
 module-excluded-patches = "'Change package name'"
-# archive is the only source serving 434.0.0.41.74 (apkmirror 403s; uptodown buries it).
+# archive is the only source that serves 434.0.0.41.74. apkmirror returns 403 and uptodown hides it.
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.instagram.barcelona"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/meta-platforms-inc/threads-instagram/"
 uptodown-dlurl = "https://threads.en.uptodown.com/android"
@@ -117,8 +118,9 @@ build-mode = "apk"
 clone = true
 version = "auto"
 arch = "all"
-# ghost-mode patches: InboxActionBarBuilderFingerprint broke in Piko 3.8.0 and hard-fails the
-# run. Excluded surgically (not --continue-on-error) so other breakage still fails loudly.
+# The ghost-mode patches. InboxActionBarBuilderFingerprint broke in Piko 3.8.0 and stops the
+# run. Exclude only these patches, and not with --continue-on-error, so that other broken
+# patches still fail loudly.
 excluded-patches = "'Disable typing status' 'View DMs anonymously' 'View live anonymously' 'View stories anonymously'"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.instagram.android"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram/"
@@ -130,14 +132,14 @@ patches-source = "rushiranpise/morphe-patches"
 cli-source = "MorpheApp/morphe-cli"
 rv-brand = "Rushi"
 build-mode = "both"
-# the Play Store package. No 'clone' — the bundle ships no rename patch matching it, so the
-# non-root apk replaces the official install instead of coexisting with it.
+# The Play Store package. There is no 'clone', because the bundle has no rename patch for it.
+# Thus the non-root apk replaces the official install instead of installing beside it.
 include-stock = "auto"
-# the mirrored build is the arm64 + 480dpi variant of 12.10.0 (code 70242) — the build the
-# bundle's fingerprints were cut against; the universal 12.10.0 upload is a later re-release.
+# The mirrored build is the arm64 and 480dpi variant of 12.10.0 (code 70242). The fingerprints
+# of the bundle target this build. The universal 12.10.0 upload is a later re-release.
 arch = "arm64-v8a"
 dpi = "480dpi"
-# no uptodown: its 'telegram' slug is the standalone org.telegram.messenger.web build.
+# There is no uptodown source. Its 'telegram' slug is the org.telegram.messenger.web build.
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/org.telegram.messenger"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/telegram-fz-llc/telegram/"
 
@@ -147,13 +149,13 @@ patches-source = "andrewliang25/morphe-patches"
 cli-source = "MorpheApp/morphe-cli"
 rv-brand = "Andrew"
 build-mode = "both"
-# archive hosts an arm64-only apkm (apkmirror 403s LINE's split bundle). No 'clone' — the
-# bundle ships no rename patch and LINE's identity is tied to its package.
+# archive hosts an arm64-only apkm, because apkmirror returns 403 for the split bundle of LINE.
+# There is no 'clone', because the bundle has no rename patch and LINE depends on its package.
 version = "auto"
 arch = "arm64-v8a"
-# keeps LINE's genuine split signature, which its server-side integrity checks require.
+# This keeps the original split signature of LINE, which its server-side integrity checks need.
 include-stock = "auto"
-# the push-notification fix is only needed by the re-signed apk; the module must not have it.
+# Only the re-signed apk needs the push-notification fix. The module must not have it.
 apk-included-patches = "'Fix push notifications'"
 module-excluded-patches = "'Fix push notifications'"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/jp.naver.line.android"

@@ -1,6 +1,6 @@
 # Config
 
-Adding another revanced app is as easy as this:
+To add another app, write this:
 ```toml
 [Some-App]
 apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
@@ -8,90 +8,93 @@ apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
 ```
 
 > [!WARNING]
-> When a patch name itself contains a single quote, double it inside the string (e.g. 'Hide ''Get Music Premium''').
+> If a patch name contains a single quote, write that quote two times, for example 'Hide ''Get Music Premium'''.
 
 ## More about other options:
 
-There exists an example below with all defaults shown and all the keys explicitly set.  
-**All keys are optional** (except download urls) and are assigned to their default values if not set explicitly.  
+The example that follows sets every key and shows every default value.  
+**All keys are optional**, except the download urls. A key that you do not set keeps its default value.  
 
 ```toml
-parallel-jobs = 1                    # amount of cores to use for parallel patching, if not set $(nproc) is used
-compression-level = 9                # module zip compression level
-remove-rv-integrations-checks = true # remove checks from the revanced integrations
-dpi = "nodpi anydpi 120-640dpi"      # dpi packages to be searched in order. default: "nodpi anydpi"
+parallel-jobs = 1                    # cores to use for parallel patching. Default: $(nproc)
+compression-level = 9                # compression level of the module zip
+remove-rv-integrations-checks = true # remove the checks from the revanced integrations
+dpi = "nodpi anydpi 120-640dpi"      # dpi packages to search, in order. Default: "nodpi anydpi"
 
-patches-source = "revanced/revanced-patches" # where to fetch patches bundle from. default: "revanced/revanced-patches"
-cli-source = "ReVanced/revanced-cli"             # where to fetch cli from. default: "ReVanced/revanced-cli"
-# options like cli-source can also set per app
-rv-brand = "ReVanced Extended" # rebrand from 'ReVanced' to something different. default: "ReVanced"
+patches-source = "revanced/revanced-patches" # where to get the patches bundle. Default: "revanced/revanced-patches"
+cli-source = "ReVanced/revanced-cli"             # where to get the cli. Default: "ReVanced/revanced-cli"
+# You can also set an option like cli-source for one app.
+rv-brand = "ReVanced Extended" # a different brand name than 'ReVanced'. Default: "ReVanced"
 
-patches-version = "v2.160.0" # 'latest', 'dev', or a version number. default: "latest"
-cli-version = "v5.0.0"       # 'latest', 'dev', or a version number. default: "latest"
+patches-version = "v2.160.0" # 'latest', 'dev', or a version number. Default: "latest"
+cli-version = "v5.0.0"       # 'latest', 'dev', or a version number. Default: "latest"
 
-# optional: an additional patch bundle applied alongside patches-source in the same patch run
-# (extra '-p' flag), for a shim/compat bundle that has to be layered on a primary one. supports
-# 'gitlab:' and GitHub like patches-source. its release is also tracked by the daily update
-# check, so a new version of this bundle triggers a rebuild on its own.
-# no app currently sets this (Twitter dropped inotia00/x-shim once Piko stopped needing it).
-extra-patches-source = "gitlab:owner/shim-patches" # default: unset
-extra-patches-version = "latest"                   # 'latest', 'dev', or a version number. default: "latest"
+# Optional. One more patch bundle, applied with patches-source in the same patch run, through
+# an extra '-p' flag. Use it for a shim bundle that must go on top of a primary bundle. Like
+# patches-source, it supports 'gitlab:' and GitHub. The daily update check also watches its
+# release, so a new version of this bundle starts a rebuild on its own. No app sets this key at
+# present. Twitter dropped inotia00/x-shim after Piko stopped needing it.
+extra-patches-source = "gitlab:owner/shim-patches" # Default: not set
+extra-patches-version = "latest"                   # 'latest', 'dev', or a version number. Default: "latest"
 
 [Some-App]
-app-name = "SomeApp" # if set, release name becomes SomeApp instead of Some-App. default is same as table name, which is 'Some-App' here.
-enabled = true       # whether to build the app. default: true
-build-mode = "apk"   # 'both', 'apk' or 'module'. default: apk
-# (fork-specific) with build-mode = "both", also emit a package-renamed coexisting APK:
-# the apk-mode output is renamed to app.<brand>.<pkg> (brand = rv-brand lowercased, non-
-# alphanumerics stripped) so it installs alongside the official app, while the module keeps
-# the original package to mount over the stock app. default: false
+app-name = "SomeApp" # the release name. Default: the table name, which is 'Some-App' here.
+enabled = true       # build this app or not. Default: true
+build-mode = "apk"   # 'both', 'apk' or 'module'. Default: apk
+# Fork-specific. With build-mode = "both", also make an APK with a new package name. The
+# apk-mode output becomes app.<brand>.<pkg>, where <brand> is rv-brand in lowercase with all
+# non-alphanumeric characters removed. That APK installs beside the official app. The module
+# keeps the original package, so that it can mount over the stock app. Default: false
 clone = false
 
-# 'auto' option gets the latest possible version supported by all the included patches
-# 'experimental' is like 'auto' but also considers experimental patches (CLI -x)
-# 'latest' gets the latest stable without checking patches support
-# whitespace seperated list of patches to exclude. default: ""
-version = "auto"     # 'auto', 'experimental', 'latest' or a version number (e.g. '17.40.41'). default: auto
+# 'auto' takes the highest version that all included patches support.
+# 'experimental' works like 'auto', but it also counts the experimental patches (CLI -x).
+# 'latest' takes the latest stable version, with no test of patch support.
+version = "auto"     # 'auto', 'experimental', 'latest' or a version number such as '17.40.41'. Default: auto
 
-# optional args to be passed to cli. can be used to set patch options
-# multiline strings in the config is supported
+# Optional arguments for the cli. You can set patch options with them.
+# The config supports strings on more than one line.
 patcher-args = """\
   -OdarkThemeBackgroundColor=#FF0F0F0F \
   -Oanother-option=value \
   """
 
+# A list of patches to exclude, separated by spaces. Default: ""
 excluded-patches = """\
   'Some Patch' \
   'Some Other Patch' \
   """
 
-included-patches = "'Some Patch'"                          # whitespace seperated list of non-default patches to include. default: ""
+included-patches = "'Some Patch'"                          # non-default patches to include, separated by spaces. Default: ""
 
-# (fork-specific) per-mode patch overrides, applied ON TOP of included/excluded-patches for a
-# single build-mode = "both" table — the YouTube GmsCore pattern generalized to any patch.
-# Use these to give the apk and module builds different patch sets from ONE table (default: "").
-apk-included-patches = "'Some Patch'"                      # include only in the apk (non-root) build
-apk-excluded-patches = "'Some Patch'"                      # exclude only in the apk (non-root) build
-module-included-patches = "'Some Patch'"                   # include only in the module (root) build
-module-excluded-patches = "'Some Patch'"                   # exclude only in the module (root) build
-include-stock = "merged"                                   # 'merged', 'split', 'auto' or 'disable'. default: merged
-                                                           #   auto = keep the genuine app signature when the source allows:
-                                                           #   original signed splits for bundle (.apkm) sources, the untouched single apk otherwise
-                                                           #   NOTE (modules only; non-root APKs unaffected): switching an existing module from
-                                                           #   'merged' (ks.keystore-re-signed) to genuine 'split'/'auto' changes the signing key,
-                                                           #   so Android rejects the update over an install — users must uninstall first (data cleared)
-exclusive-patches = false                                  # exclude all patches by default. default: false
+# Fork-specific. Patch overrides for one build mode, applied on top of included-patches and
+# excluded-patches in a single build-mode = "both" table. They work like the GmsCore behavior of
+# YouTube, but for any patch. Use them to give the apk build and the module build different patch
+# sets from one table. Default: ""
+apk-included-patches = "'Some Patch'"                      # include in the apk (non-root) build only
+apk-excluded-patches = "'Some Patch'"                      # exclude in the apk (non-root) build only
+module-included-patches = "'Some Patch'"                   # include in the module (root) build only
+module-excluded-patches = "'Some Patch'"                   # exclude in the module (root) build only
+include-stock = "merged"                                   # 'merged', 'split', 'auto' or 'disable'. Default: merged
+                                                           #   'auto' keeps the original app signature where the source permits it:
+                                                           #   the original signed splits for a bundle (.apkm) source, and the
+                                                           #   unchanged single apk for all other sources.
+                                                           #   CAUTION (modules only, non-root APKs are not affected): a change of an
+                                                           #   existing module from 'merged' (re-signed with ks.keystore) to 'split' or
+                                                           #   'auto' changes the signing key. Android then refuses the update, and the
+                                                           #   user must uninstall the app first. An uninstall erases the app data.
+exclusive-patches = false                                  # exclude all patches by default. Default: false
 
 apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
 uptodown-dlurl = "https://spotify.en.uptodown.com/android"
-# direct download url. the url must have point to an apk file with name format shown in this example
+# A direct download url. It must point to an apk file with the name format of this example.
 direct-dlurl = "https://website/com.google.android.youtube-20.40.45-all.apk"
-# self-hosted archive.org backend, for apps apkmirror/uptodown won't reliably serve.
-# point at an archive.org folder whose path ends in the package name, holding files named
-# <pkg>-<version>-<arch>.apk[m]; .apkm bundles are merged automatically.
+# A self-hosted archive.org source, for an app that apkmirror or uptodown does not serve
+# reliably. Point it at an archive.org folder whose path ends with the package name. The folder
+# holds files named <pkg>-<version>-<arch>.apk or .apkm. The build merges an .apkm bundle.
 archive-dlurl = "https://archive.org/download/my-apks/apks/com.google.android.youtube"
 
-module-prop-name = "some-app-module"                       # module prop name.
-dpi = "360-480dpi"                                         # used to select apk variant from apkmirror. default: nodpi
-arch = "arm64-v8a"                                         # 'arm64-v8a', 'arm-v7a', 'all', 'both'. 'both' downloads both arm64-v8a and arm-v7a. default: all
+module-prop-name = "some-app-module"                       # the module prop name
+dpi = "360-480dpi"                                         # selects the apk variant on apkmirror. Default: nodpi
+arch = "arm64-v8a"                                         # 'arm64-v8a', 'arm-v7a', 'all' or 'both'. 'both' downloads arm64-v8a and arm-v7a. Default: all
 ```

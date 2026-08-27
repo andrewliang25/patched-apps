@@ -27,7 +27,7 @@ COMPRESSION_LEVEL=$(toml_get "$main_config_t" compression-level) || COMPRESSION_
 if ! PARALLEL_JOBS=$(toml_get "$main_config_t" parallel-jobs); then
 	if [ "$OS" = Android ]; then PARALLEL_JOBS=1; else PARALLEL_JOBS=$(nproc); fi
 fi
-PARALLEL_JOBS=1 # TODO: multiple jobs were broken by recent cli versions. and i cant bother to fix it so instead, i disable it.
+PARALLEL_JOBS=1 # TODO: recent CLI versions broke parallel jobs. Disabled until this is fixed.
 REMOVE_RV_INTEGRATIONS_CHECKS=$(toml_get "$main_config_t" remove-rv-integrations-checks) || REMOVE_RV_INTEGRATIONS_CHECKS="true"
 DEF_PATCHES_VER=$(toml_get "$main_config_t" patches-version) || DEF_PATCHES_VER="latest"
 DEF_CLI_VER=$(toml_get "$main_config_t" cli-version) || DEF_CLI_VER="latest"
@@ -41,18 +41,18 @@ if [ "${2-}" = "--config-update" ]; then
 	exit 0
 fi
 
-# print the *-update.json basenames every module-producing table should own, so
-# CI can prune orphans left behind by renames / build-mode switches. Config-driven
-# (not this-run's built subset) and independent of 'enabled' so a disabled-but-still
-# -configured module keeps its json.
+# Print the *-update.json basename that each module table owns. CI uses this list to
+# delete orphan files left by a rename or a build-mode change. The list comes from the
+# config, not from the apps built in this run, and it ignores 'enabled'. Thus a disabled
+# table keeps its json.
 if [ "${2-}" = "--list-update-jsons" ]; then
 	for table_name in $(toml_get_table_names); do
 		[ -z "$table_name" ] && continue
 		t=$(toml_get_table "$table_name")
-		bm=$(toml_get "$t" build-mode) || bm=apk # app-table only, default apk (as the main loop below)
+		bm=$(toml_get "$t" build-mode) || bm=apk # app tables only. The default is apk, as in the main loop.
 		case "$bm" in both | module) ;; *) continue ;; esac
-		# mirror the arch fan-out below: arch=both builds one module (hence one update
-		# json) per ABI, with the arch folded into the table name build_rv slugifies.
+		# Same fan-out as the main loop. arch=both builds one module for each ABI, and
+		# thus one update json for each ABI. build_rv puts the arch into the table name.
 		arch=$(toml_get "$t" arch) || arch=all
 		if [ "$arch" = both ]; then
 			update_json_name "$table_name (arm64-v8a)"
@@ -65,7 +65,7 @@ if [ "${2-}" = "--list-update-jsons" ]; then
 fi
 
 : >build.md
-rm -f "$BUILT_PATCHES_FILE" "$TEMP_DIR"/built-patches.tsv # stale from a previous run
+rm -f "$BUILT_PATCHES_FILE" "$TEMP_DIR"/built-patches.tsv # left over from a previous run
 ENABLE_MODULE_UPDATE=$(toml_get "$main_config_t" enable-module-update) || ENABLE_MODULE_UPDATE=true
 if [ "$ENABLE_MODULE_UPDATE" = true ] && [ -z "${GITHUB_REPOSITORY-}" ]; then
 	pr "You are building locally. Module updates will not be enabled."
@@ -74,9 +74,9 @@ fi
 if ((COMPRESSION_LEVEL > 9)) || ((COMPRESSION_LEVEL < 0)); then abort "compression-level must be within 0-9"; fi
 
 rm -rf module/bin/*/tmp.*
-rm -rf "$TEMP_DIR"/changelogs # per-source changelog fragments, rebuilt this run by get_prebuilts
+rm -rf "$TEMP_DIR"/changelogs # changelog parts for each source. get_prebuilts writes them again.
 rm -f "$TEMP_DIR"/cli-changelog.md
-rm -f "$FAILED_BUILDS_FILE" "$BUILD_WARNINGS_FILE" # stale failures/warnings from a previous local run
+rm -f "$FAILED_BUILDS_FILE" "$BUILD_WARNINGS_FILE" # failures and warnings left over from a previous local run
 
 mkdir -p ${MODULE_TEMPLATE_DIR}/bin/arm64 ${MODULE_TEMPLATE_DIR}/bin/arm ${MODULE_TEMPLATE_DIR}/bin/x86 ${MODULE_TEMPLATE_DIR}/bin/x64
 gh_dl "${MODULE_TEMPLATE_DIR}/bin/arm64/cmpr" "https://github.com/j-hc/cmpr/releases/latest/download/cmpr-arm64-v8a"
@@ -109,12 +109,13 @@ for table_name in $(toml_get_table_names); do
 	read -r patches_jar cli_jar <<<"$PREBUILTS"
 	app_args[cli]=$cli_jar
 	app_args[ptjar]=$patches_jar
-	app_args[patches_src]=$patches_src # recorded (with the built asset) into the patches state
+	app_args[patches_src]=$patches_src # written to the patches state with the built asset name
 
-	# optional second patch bundle applied alongside the primary one (e.g. x-shim + Piko).
-	# reuses get_prebuilts (handles gitlab:/GitHub + integrations stripping); the CLI is cached
-	# from the call above so it isn't re-downloaded. its 'Patches:' changelog line in build.md
-	# also lets config_update detect updates to this bundle.
+	# Optional second patch bundle, applied together with the primary one (for example x-shim
+	# with Piko). It calls get_prebuilts again, which handles gitlab: and GitHub sources and
+	# strips the integrations checks. The CLI is already cached by the call above, so it is not
+	# downloaded again. The 'Patches:' line that this bundle adds to build.md also lets
+	# config_update find updates to it.
 	extra_patches_src=$(toml_get "$t" extra-patches-source) && {
 		extra_patches_ver=$(toml_get "$t" extra-patches-version) || extra_patches_ver="latest"
 		if ! EXTRA="$(get_prebuilts "$cli_src" "$cli_ver" "$extra_patches_src" "$extra_patches_ver")"; then
@@ -134,9 +135,10 @@ for table_name in $(toml_get_table_names); do
 	if [ -n "${app_args[excluded_patches]}" ] && [[ ${app_args[excluded_patches]} != *'"'* ]]; then abort "patch names inside excluded-patches must be quoted"; fi
 	app_args[included_patches]=$(toml_get "$t" included-patches) || app_args[included_patches]=""
 	if [ -n "${app_args[included_patches]}" ] && [[ ${app_args[included_patches]} != *'"'* ]]; then abort "patch names inside included-patches must be quoted"; fi
-	# (fork-specific) per-mode patch overrides: like YouTube's automatic GmsCore toggle, but
-	# user-specified — include/exclude a patch only in apk mode or only in module mode from a
-	# single 'both' table. Applied on top of the shared included/excluded-patches in build_rv.
+	# Fork-specific. Patch overrides for one build mode only. They work like the automatic
+	# GmsCore toggle for YouTube, but the user sets them. One 'both' table can include or
+	# exclude a patch in apk mode only, or in module mode only. build_rv applies them on top
+	# of the shared included-patches and excluded-patches.
 	for _pm in apk module; do
 		app_args[${_pm}_excluded_patches]=$(toml_get "$t" "${_pm}-excluded-patches") || app_args[${_pm}_excluded_patches]=""
 		if [ -n "${app_args[${_pm}_excluded_patches]}" ] && [[ ${app_args[${_pm}_excluded_patches]} != *'"'* ]]; then abort "patch names inside ${_pm}-excluded-patches must be quoted"; fi
@@ -149,7 +151,7 @@ for table_name in $(toml_get_table_names); do
 	app_args[patcher_args]=$(toml_get "$t" patcher-args) || app_args[patcher_args]=""
 	app_args[clone]=$(toml_get "$t" clone) && vtf "${app_args[clone]}" "clone" || app_args[clone]=false
 	app_args[table]=$table_name
-	app_args[table_base]=$table_name # stable state key; app_args[table] gets an arch suffix below
+	app_args[table_base]=$table_name # stable state key. The code below adds an arch suffix to app_args[table].
 	app_args[build_mode]=$(toml_get "$t" build-mode) && {
 		if ! isoneof "${app_args[build_mode]}" both apk module; then
 			abort "ERROR: build-mode '${app_args[build_mode]}' is not a valid option for '${table_name}': only 'both', 'apk' or 'module' is allowed"
@@ -223,9 +225,9 @@ if [ -s "$BUILD_WARNINGS_FILE" ]; then
 fi
 if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then abort "All builds failed."; fi
 
-# fold this run's successfully-built bundles into a per-run JSON ({ "<app>": { "<src>": "<asset>" } }).
-# build.yml merges this into the persistent PATCHES_STATE_FILE on the 'update' branch, so apps
-# built in an earlier run keep their record instead of being clobbered like build.md is.
+# Write the bundles built in this run to a JSON file: { "<app>": { "<src>": "<asset>" } }.
+# build.yml merges this file into PATCHES_STATE_FILE on the 'update' branch. Thus an app built
+# in an earlier run keeps its record. build.md, in contrast, is overwritten in each run.
 if [ -f "$TEMP_DIR"/built-patches.tsv ]; then
 	jq -Rn 'reduce (inputs | split("\t")) as $r ({}; .[$r[0]][$r[1]] = $r[2])' \
 		"$TEMP_DIR"/built-patches.tsv >"$BUILT_PATCHES_FILE"
@@ -238,9 +240,9 @@ log "\nEvery APK/module is published with [GitHub build provenance attestations]
 log '```'
 log "gh attestation verify <file> --repo andrewliang25/patched-apps"
 log '```'
-# emit changelog fragments only for patch sources that actually shipped (built-patches.tsv is
-# written on success only), so a failed build's bundle never advertises a patch update. dedup the
-# source column preserving first-seen order; cli-changelog.md is appended last as before.
+# Emit changelog parts only for the patch sources that shipped. built-patches.tsv is written
+# on success only, so a failed build never advertises a patch update. Remove duplicate sources
+# from the source column, but keep the first-seen order. cli-changelog.md comes last.
 cl_files=()
 if [ -f "$TEMP_DIR"/built-patches.tsv ]; then
 	while IFS= read -r built_src; do

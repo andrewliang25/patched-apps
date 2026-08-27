@@ -6,18 +6,19 @@ TEMP_DIR="temp"
 BIN_DIR="bin"
 BUILD_DIR="build"
 DL_SRCS=("direct" "archive" "apkmirror" "uptodown")
-# persistent per-app record of the patch-bundle asset that was last successfully built
-# (lives on the 'update' branch). config_update compares against it; build.yml accumulates it.
+# For each app, the patch-bundle asset that the last successful build used. The file lives on
+# the 'update' branch. config_update reads it, and build.yml adds to it.
 PATCHES_STATE_FILE="patches-state.json"
-# per-run partial that build.sh emits and build.yml merges into PATCHES_STATE_FILE.
+# The part built in this run. build.sh writes it and build.yml merges it into PATCHES_STATE_FILE.
 BUILT_PATCHES_FILE="patches-built.json"
-# per-run list of enabled apps that failed to produce any artifact ("<table>\t<reason>" lines).
-# build.sh summarizes it; build.yml reports it to the admin chat + job summary. A per-app failure
-# does not fail the job (other apps still ship), so without this the failure would be invisible.
+# The enabled apps in this run that made no artifact, one "<table>\t<reason>" line each. build.sh
+# prints a summary, and build.yml sends the list to the admin chat and the job summary. One failed
+# app does not fail the job, because the other apps still ship. Without this file the failure is
+# invisible.
 FAILED_BUILDS_FILE="failed-builds.txt"
-# per-run list of apps that shipped with a non-fatal caveat ("<table>\t<message>" lines) — e.g.
-# an 'auto' build that stepped down below the latest supported version because it wasn't
-# downloadable. Surfaced to the admin chat + job summary alongside failures (see build.yml).
+# The apps in this run that shipped with a warning, one "<table>\t<message>" line each. One
+# example is an 'auto' build that stepped down below the latest supported version, because that
+# version was not downloadable. build.yml sends these to the admin chat and the job summary.
 BUILD_WARNINGS_FILE="build-warnings.txt"
 
 if [ "${GITHUB_TOKEN-}" ]; then GH_HEADER="Authorization: token ${GITHUB_TOKEN}"; else GH_HEADER=; fi
@@ -35,11 +36,11 @@ toml_prep() {
 toml_get_table_names() { jq -r -e 'to_entries[] | select(.value | type == "object") | .key' <<<"$__TOML__"; }
 toml_get_table_main() { jq -r -e 'to_entries | map(select(.value | type != "object")) | from_entries' <<<"$__TOML__"; }
 toml_get_table() { jq -r -e ".\"${1}\"" <<<"$__TOML__"; }
-# canonical *-update.json basename for a table name: lowercase, '/' -> '-'
+# The *-update.json basename for a table name: lowercase, with '/' changed to '-'.
 update_json_name() { local s=${1,,}; echo "${s//\//-}-update.json"; }
-# canonical magisk module id for a table name: lowercase, then every character
-# outside [a-z0-9._-] (spaces, '/', '+', ...) folded to '-'. magisk validates the
-# id against ^[a-zA-Z][a-zA-Z0-9._-]+$ at flash time and refuses the zip otherwise.
+# The magisk module id for a table name: lowercase, with every character outside [a-z0-9._-]
+# changed to '-'. This includes spaces, '/' and '+'. At flash time magisk tests the id against
+# ^[a-zA-Z][a-zA-Z0-9._-]+$ and refuses the zip if the id does not match.
 module_id_name() { local s=${1,,}; echo "${s//[!a-z0-9._-]/-}"; }
 toml_get() {
 	local op quote_placeholder=$'\001'
@@ -89,7 +90,7 @@ get_prebuilts() {
 	local patches_src_bare=$patches_src
 	if [[ "$patches_src" == gitlab:* ]]; then patches_src_bare="${patches_src#gitlab:}"; fi
 	pr "Getting prebuilts (${patches_src_bare%/*})" >&2
-	# per-source changelog fragment; emitted into build.md only if this bundle ships (see build.sh).
+	# The changelog part for this source. build.sh puts it into build.md only if this bundle ships.
 	local cl_file
 	cl_file=$(cl_changelog_file "$patches_src")
 	mkdir -p "$(dirname "$cl_file")"
@@ -189,7 +190,7 @@ get_prebuilts() {
 				gh_dl "$file" "$url" >&2 || return 1
 			fi
 			if [ "$tag" = CLI ]; then
-				# CLI line goes to a separate file so build.md lists it after all Patches lines
+				# The CLI line goes into its own file, so build.md lists it after all Patches lines.
 				echo "$tag: $(cut -d/ -f1 <<<"$bare_src")/${name}  " >>"${TEMP_DIR}/cli-changelog.md"
 			else
 				echo "$tag: $(cut -d/ -f1 <<<"$bare_src")/${name}  " >>"$cl_file"
@@ -241,11 +242,12 @@ set_prebuilts() {
 	TOML="${BIN_DIR}/toml/tq-${arch}"
 }
 
-# resolves the current patch-bundle asset name for a source+version (e.g. "patches-1.19.0.mpp"),
-# mirroring the asset get_prebuilts would download so the value is comparable to what a build
-# recorded. sets LATEST_NAME (empty on failure) and returns 1 if it cannot be resolved (API
-# error). result cached per "src/ver" in the caller-scoped latest_cache[]; must be called
-# directly (not in a $() subshell) or the cache write would be discarded.
+# Find the current patch-bundle asset name for a source and a version, for example
+# "patches-1.19.0.mpp". It picks the same asset that get_prebuilts downloads, so the name can be
+# compared with the name that a build recorded. It sets LATEST_NAME, which stays empty on failure,
+# and it returns 1 when an API error prevents the lookup. The result is cached for each "src/ver"
+# in latest_cache[], which belongs to the caller. Call this function directly. In a $() subshell
+# the cache write is lost.
 _latest_patches_name() {
 	local PATCHES_SRC=$1 PATCHES_VER=$2 key="$1/$2"
 	if [[ -v latest_cache["$key"] ]]; then
@@ -253,7 +255,7 @@ _latest_patches_name() {
 		[ -n "$LATEST_NAME" ]
 		return
 	fi
-	latest_cache["$key"]="" LATEST_NAME="" # pessimistic default; overwritten on success
+	latest_cache["$key"]="" LATEST_NAME="" # the default for a failure. Success overwrites it.
 	local is_gitlab_cu=false bare_patches_src="$PATCHES_SRC"
 	if [[ "$PATCHES_SRC" == gitlab:* ]]; then is_gitlab_cu=true; bare_patches_src="${PATCHES_SRC#gitlab:}"; fi
 	local rv_rel resp
@@ -277,8 +279,9 @@ _latest_patches_name() {
 			resp=$(gh_req "$rv_rel/tags/${PATCHES_VER}" -) || return 1
 		fi
 	fi
-	# select the same asset get_prebuilts picks: drop .asc/.json/.txt (checksums), and if that leaves >1 prefer
-	# the non "-dev" build when doing so is unambiguous, then take the first.
+	# Select the same asset as get_prebuilts. Remove the .asc, .json and .txt checksum files. If
+	# more than one asset remains, prefer the build without "-dev" when only one such build
+	# remains. Then take the first asset.
 	local matches
 	if [ "$is_gitlab_cu" = true ]; then
 		matches=$(jq -e '.assets.links | map(select(.name | (endswith("asc") or endswith("json") or endswith("txt")) | not))' <<<"$resp") || return 1
@@ -296,10 +299,10 @@ _latest_patches_name() {
 	latest_cache["$key"]=$name LATEST_NAME=$name
 }
 
-# returns 0 if $table needs a rebuild for patches source $1@$2, i.e. the current asset differs
-# from the one recorded for this app in PATCHES_STATE_FILE (or nothing is recorded yet).
-# 1 otherwise. an unresolvable source (API error) is treated as "no change" so a transient
-# failure never spuriously triggers a full build.
+# Return 0 if $table needs a rebuild for patches source $1@$2. This is true when the current
+# asset differs from the asset recorded for this app in PATCHES_STATE_FILE, and also when nothing
+# is recorded yet. Return 1 in all other cases. A source that the API cannot resolve counts as
+# "no change", so a temporary API error never starts a full build.
 _patches_src_changed() {
 	local PATCHES_SRC=$1 PATCHES_VER=$2 table=$3 recorded
 	_latest_patches_name "$PATCHES_SRC" "$PATCHES_VER" || return 1 # sets LATEST_NAME
@@ -367,22 +370,24 @@ gh_dl() {
 }
 
 log() { echo -e "$1  " >>"build.md"; }
-# append one "<app>\t<patches-source>\t<asset-name>" line per successfully-built bundle.
-# build.sh folds these into BUILT_PATCHES_FILE after all builds finish; build.yml merges that
-# into the persistent PATCHES_STATE_FILE. only called on success so a failed build isn't
-# recorded (=> it stays eligible for a retry on the next run).
+# Append one "<app>\t<patches-source>\t<asset-name>" line for each bundle that built. After all
+# builds finish, build.sh writes these lines into BUILT_PATCHES_FILE, and build.yml merges that
+# file into PATCHES_STATE_FILE. This function runs on success only. Thus a failed build stays
+# unrecorded, and the next run tries it again.
 log_built_patches() { printf '%s\t%s\t%s\n' "$1" "$2" "$(basename "$3")" >>"${TEMP_DIR}/built-patches.tsv"; }
-# path of the per-patches-source changelog fragment (the "Patches:"/"[Changelog]" lines).
-# keyed by the full source string ($1, e.g. "crimera/piko" or "gitlab:inotia00/x-shim") so it
-# matches column 2 of built-patches.tsv. get_prebuilts writes it at download time; build.sh emits
-# only the fragments whose source actually shipped, so a failed build's bundle never appears in
-# the release notes. sanitize '/' and ':' -> '_' to make a flat filename.
+# The path of the changelog part for one patches source. The part holds the "Patches:" and
+# "[Changelog]" lines. The key is the full source string ($1), for example "crimera/piko" or
+# "gitlab:inotia00/x-shim", so that it matches column 2 of built-patches.tsv. get_prebuilts writes
+# the part at download time. build.sh emits only the parts whose source shipped, so the bundle of
+# a failed build never appears in the release notes. '/' and ':' become '_' to make a flat
+# filename.
 cl_changelog_file() { local k=${1//\//_}; k=${k//:/_}; echo "${TEMP_DIR}/changelogs/${k}.md"; }
-# record an enabled app that failed to ship (table + short reason), for build.sh/build.yml to
-# surface. Appended from background build_rv jobs; one short line per call keeps appends atomic.
+# Record an enabled app that did not ship, with its table name and a short reason. build.sh and
+# build.yml report it. Background build_rv jobs append to this file. Each call writes one short
+# line, which keeps the append atomic.
 record_failure() { printf '%s\t%s\n' "$1" "${2:-build failed}" >>"$FAILED_BUILDS_FILE"; }
-# record a non-fatal build caveat (table + message) for build.sh/build.yml to surface, same
-# atomic one-line append as record_failure. Used for auto version step-downs.
+# Record a build warning, with its table name and a message, for build.sh and build.yml to
+# report. It appends one line, like record_failure. It is used for 'auto' version step-downs.
 record_warning() { printf '%s\t%s\n' "$1" "${2:-}" >>"$BUILD_WARNINGS_FILE"; }
 get_highest_ver() {
 	local vers m
@@ -396,57 +401,58 @@ semver_validate() {
 	local ac="${a//[.0-9]/}"
 	[ ${#ac} = 0 ]
 }
-# sort a newline-separated version list highest-first (semver-aware). Mirrors get_highest_ver
-# but keeps the whole list instead of taking the top one; get_highest_ver == this | head -1.
+# Sort a version list, one version per line, highest first. It understands semver. It works like
+# get_highest_ver, but it keeps the whole list. get_highest_ver is the same as this | head -1.
 _sort_vers_desc() {
 	local vers m
 	vers=$(tee)
 	m=$(head -1 <<<"$vers")
 	if ! semver_validate "$m"; then echo "$vers"; else sort -s -t- -k1,1Vr <<<"$vers"; fi
 }
-# versions a single patches bundle supports for $pkg_name, highest-first, one per line (uses
-# $cli_jar/$pkg_name from caller scope); echoes nothing when the bundle imposes no version
-# constraint. $2=lenient: when true, a bundle that reports no compatible versions is treated
-# as "no constraint" instead of a fatal error — used for extra-patches bundles, which may
-# legitimately contribute no versioned patches (e.g. the x-shim shim applied alongside
-# Piko). morphe-desktop 1.11.0+ omits the versions section entirely for such bundles
-# (older CLIs printed "Any"); both cases mean the same thing here.
+# Echo the versions that one patches bundle supports for $pkg_name, highest first, one per line.
+# It reads $cli_jar and $pkg_name from the caller. It echoes nothing when the bundle sets no
+# version limit. $2 is 'lenient'. When it is true, a bundle that reports no compatible version
+# counts as "no limit" instead of a fatal error. Extra-patches bundles use this, because such a
+# bundle can correctly contribute no versioned patch. One example is the x-shim shim applied with
+# Piko. morphe-desktop 1.11.0 and later omit the versions section for such a bundle. Older CLIs
+# printed "Any". Both cases mean the same thing here.
 _supported_vers_for_jar() {
 	local pj=$1 lenient=${2:-false} is_experimental=${3:-false} op pcount
 	op=$(patches_list_versions "$cli_jar" "$pj" "$pkg_name" "$is_experimental") || return 1
-	# morphe-cli >=1.14.0 appends ' [versionCodes: ARM64_V8A=..., ...]' to each version line for
-	# bundles whose targets declare version codes (De-Vanced, Piko, rushiranpise). Strip it or the
-	# resolved 'version' carries that suffix and no download source can match it.
+	# morphe-cli 1.14.0 and later append ' [versionCodes: ARM64_V8A=..., ...]' to each version line,
+	# for bundles whose targets declare version codes (De-Vanced, Piko, rushiranpise). Remove it.
+	# If it stays, the resolved 'version' keeps the suffix and no download source can match it.
 	op=$(sed -n '/Most common compatible versions:/,$p' <<<"$op" |
 		sed '1d;s/ \[versionCodes:[^]]*\]//' | awk '{$1=$1}1')
 	if [ "$op" = "Any" ]; then return; fi
 	if [ -z "$op" ]; then
-		# list-versions produced no version tier. Either the package genuinely has no patches in
-		# this bundle, or its patches impose no version constraint — a version-unconstrained
-		# package lists nothing here (empty), NOT "Any". Distinguish via the caller's list-patches
-		# output (in scope, same as the pcount branch below): if the package has patches, treat as
-		# no version ceiling (empty return => auto falls back to latest); otherwise it truly has none.
+		# list-versions gave no version tier. Either the bundle has no patch for this package, or
+		# its patches set no version limit. A package with no version limit prints nothing here,
+		# not "Any". The list-patches output of the caller tells the two apart, as in the pcount
+		# branch below. If the package has patches, there is no version limit, and the empty
+		# return makes 'auto' fall back to the latest version. If not, the package truly has none.
 		{ [ "$lenient" = true ] || grep -Fq "$pkg_name" <<<"${list_patches:-}"; } && return
 		abort "No patches found for '$pkg_name' in patches '$pj'"
 	fi
 	pcount=$(head -1 <<<"$op") pcount=${pcount#*(} pcount=${pcount% *}
 	if [ -z "$pcount" ]; then
-		# patches exist for the package but none constrain the version (unparseable
-		# patch count): treat as no ceiling rather than aborting. $list_patches is the
-		# caller's (get_patch_last_supported_ver) list-patches output, in scope here.
+		# The package has patches, but none of them set a version limit, because the patch count
+		# cannot be parsed. Treat this as no limit instead of an abort. $list_patches is the
+		# list-patches output of the caller, get_patch_last_supported_ver.
 		{ [ "$lenient" = true ] || grep -Fq "$pkg_name" <<<"${list_patches:-}"; } && return
 		abort "No patches found for '$pkg_name' in patches '$pj'"
 	fi
-	# every version in the top tier (supported by all $pcount patches), highest-first
+	# Every version in the top tier, which all $pcount patches support, highest first.
 	grep -F "($pcount patch" <<<"$op" | sed 's/ (.* patch.*//' | _sort_vers_desc || return 1
 }
-# echoes the versions jointly supported by the primary bundle and every extra-patches bundle,
-# highest-first (one per line); empty when no bundle constrains the version, non-zero exit on a
-# hard list-patches failure. The caller ('auto' mode) takes line 1 as the pick and, if that
-# version can't be downloaded from any source, walks down the rest (step-down) — so a version a
-# bundle over-declares (historically: Paresh listing Telegram-web 12.9.1, which had no web APK)
-# falls back to the highest version that is actually obtainable. Name kept for upstream-merge
-# stability though it now returns the whole ranked list, not just the last (=line 1) version.
+# Echo the versions that the primary bundle and every extra-patches bundle support together,
+# highest first, one per line. The output is empty when no bundle sets a version limit. The exit
+# code is not zero when list-patches fails hard. In 'auto' mode the caller takes line 1. If no
+# source can download that version, the caller walks down the rest of the list. Thus a version
+# that a bundle declares but nobody hosts falls back to the highest version that is available.
+# One past example: Paresh listed Telegram-web 12.9.1, for which no web APK existed. The name of
+# this function is unchanged, to keep upstream merges simple, but it now returns the whole ranked
+# list, not the last version only.
 get_patch_last_supported_ver() {
 	local list_patches=$1 pkg_name=$2 inc_sel=$3 is_experimental=$4
 	local op
@@ -463,18 +469,18 @@ get_patch_last_supported_ver() {
 		done <<<"$(list_args "$inc_sel")"
 		vers=$(awk '{$1=$1}1' <<<"$vers" | grep -v '^$' || :)
 		if [ "$vers" ] && [ "$n" -gt 0 ]; then
-			# a version supported by all n constraining included patches appears n times
+			# A version that all n included patches support appears n times.
 			local common
 			common=$(sort <<<"$vers" | uniq -c | awk -v n="$n" '$1 == n {print $2}')
 			if [ "$common" ]; then _sort_vers_desc <<<"$common"; return; fi
 		fi
-		# else fall through to the primary + extra-bundle resolution below
+		# If not, use the primary bundle and extra bundle resolution below.
 	fi
-	# versions supported by the primary bundle AND every extra-patches bundle (intersection),
-	# highest-first. An extra bundle that imposes no version constraint (empty list, e.g. the
-	# x-shim shim) doesn't narrow the set. Patches are downward-compatible, so stepping down
-	# this list stays safe for every bundle applied together. is_experimental threads through so
-	# 'experimental' mode resolves the version against experimental patches too (CLI -x).
+	# The versions that the primary bundle and every extra-patches bundle support, highest first.
+	# An extra bundle with no version limit gives an empty list, for example the x-shim shim, and
+	# it does not make the set smaller. Patches are compatible downward, so a step down this list
+	# is safe for every bundle applied together. is_experimental is passed on, so 'experimental'
+	# mode also resolves the version against the experimental patches (CLI -x).
 	local vers ej ejv
 	vers=$(_supported_vers_for_jar "$patches_jar" false "$is_experimental") || return 1
 	for ej in ${args[ptjar_extra]:-}; do
@@ -545,7 +551,7 @@ merge_splits() {
 		epr "APKEditor error: $OP"
 		return 1
 	fi
-	# sign the merged stock apk
+	# Sign the merged stock apk.
 	if ! OP=$(java -jar "$APKSIGNER" sign --ks ks-p12.keystore --ks-pass pass:123456789 --key-pass pass:123456789 --ks-key-alias andrewliang \
 		--out "${output}" "${output}-unsigned"); then
 		epr "apksigner error: $OP"
@@ -585,7 +591,7 @@ apkmirror_search() {
 		fi
 	done
 	if [ "$n" -eq 2 ] && [ "$dlurl" ]; then
-		# only one apk exists, return it
+		# Only one apk exists. Return it.
 		echo "$dlurl"
 		return 0
 	fi
@@ -766,7 +772,7 @@ patch_apk() {
 
 	local cmd="java -jar '$cli_jar' patch '$stock_input' -o '$patched_apk' -p '$patches_jar' --keystore=ks.keystore \
 --keystore-entry-password=123456789 --keystore-password=123456789 --signer=andrewliang --keystore-entry-alias=andrewliang -t '$tmp_files' $patcher_args"
-	# additional patch bundle(s) applied alongside the primary one (e.g. x-shim + Piko)
+	# More patch bundles, applied together with the primary one (for example x-shim with Piko).
 	local ep
 	for ep in $extra_patches; do cmd+=" -p '$ep'"; done
 
@@ -804,7 +810,7 @@ build_rv() {
 	local dl_from=${args[dl_from]}
 	local arch=${args[arch]}
 	local arch_f="${arch// /}"
-	local built_ok=false # set once any (mode, arch) build for this app succeeds
+	local built_ok=false # true after any (mode, arch) build of this app succeeds
 
 	local p_patcher_args=()
 	if [ "${args[excluded_patches]}" ]; then p_patcher_args+=("$(join_args "${args[excluded_patches]}" -d)"); fi
@@ -851,8 +857,9 @@ build_rv() {
 		if [ -z "$supported_vers" ]; then
 			get_latest_ver=true
 		else
-			# line 1 is the pick; the rest are step-down fallbacks, tried in order below if the
-			# pick can't be downloaded from any source (e.g. a version a bundle over-declares).
+			# Line 1 is the pick. The other lines are fallbacks. The code below tries them in
+			# order if no source can download the pick. This occurs when a bundle declares a
+			# version that nobody hosts.
 			mapfile -t version_candidates <<<"$supported_vers"
 			version=${version_candidates[0]}
 		fi
@@ -872,7 +879,7 @@ build_rv() {
 		record_failure "$table" "could not resolve version"
 		return 0
 	fi
-	# non-auto modes and the get_latest_ver path resolve exactly one version (no step-down)
+	# Modes other than 'auto', and the get_latest_ver path, resolve one version only, with no step-down.
 	if [ ${#version_candidates[@]} -eq 0 ]; then version_candidates=("$version"); fi
 
 	if [ "$mode_arg" = module ]; then
@@ -883,8 +890,8 @@ build_rv() {
 		build_mode_arr=(apk module)
 	fi
 
-	# try each candidate version highest-first; the inner loop already tries every configured
-	# source, so a version is only abandoned once no source can serve it (step-down).
+	# Try each candidate version, highest first. The inner loop already tries every configured
+	# source, so the code steps down to the next version only after every source fails.
 	local version_f stock_apk cand dled=false
 	for cand in "${version_candidates[@]}"; do
 		version=$cand
@@ -920,8 +927,8 @@ build_rv() {
 		record_failure "$table" "stock apk download failed (${version_candidates[*]})"
 		return 0
 	fi
-	# auto stepped down: shipped a supported version below the latest one because the latter
-	# wasn't downloadable. Not a failure (the app builds), but worth flagging to the maintainer.
+	# 'auto' stepped down. It shipped a supported version below the latest one, because the latest
+	# one was not downloadable. The app still builds, so this is a warning, not a failure.
 	if [ "$version" != "${version_candidates[0]}" ]; then
 		wpr "'${table}' built '${version}', not latest supported '${version_candidates[0]}' (not downloadable)"
 		record_warning "$table" "built ${version} — latest supported ${version_candidates[0]} not downloadable"
@@ -954,8 +961,8 @@ build_rv() {
 		p_patcher_args=("${p_patcher_args[@]//-[ei] ${microg_patch}/}")
 	fi
 
-	# clone (apk mode only): a renamed package so the apk coexists with the official app;
-	# the module keeps the original package (the rename patch is off by default in module mode).
+	# Clone, in apk mode only. The package is renamed, so the apk installs beside the official app.
+	# The module keeps the original package, because the rename patch is off in module mode.
 	local clone_patch="" clone_pkg=""
 	if [ "${args[clone]}" = true ]; then
 		clone_patch=$(grep -m1 "^Name: Clone$" <<<"$list_patches" || grep -m1 "^Name: Change package name$" <<<"$list_patches") || :
@@ -968,8 +975,8 @@ build_rv() {
 		fi
 	fi
 
-	# per-mode patch overrides make the apk and module patched APKs differ, so (like microg/clone)
-	# they must be written to mode-suffixed filenames to avoid one mode overwriting the other's.
+	# Patch overrides for one mode make the apk and the module differ. Thus each mode must write to
+	# its own filename, as microg and clone do, or one mode overwrites the file of the other.
 	local per_mode_patches=false
 	if [ -n "${args[apk_included_patches]:-}" ] || [ -n "${args[apk_excluded_patches]:-}" ] ||
 		[ -n "${args[module_included_patches]:-}" ] || [ -n "${args[module_excluded_patches]:-}" ]; then
@@ -977,7 +984,7 @@ build_rv() {
 	fi
 	local patcher_args patched_apk build_mode
 	local rv_brand_f=${args[rv_brand],,}
-	rv_brand_f=${rv_brand_f//[^a-z0-9]/-} # slug for filenames: spaces, '+', etc. -> '-'
+	rv_brand_f=${rv_brand_f//[^a-z0-9]/-} # slug for filenames: a space, '+' or other character becomes '-'
 	if [ "${args[patcher_args]}" ]; then p_patcher_args+=("${args[patcher_args]}"); fi
 	for build_mode in "${build_mode_arr[@]}"; do
 		patcher_args=("${p_patcher_args[@]}")
@@ -997,8 +1004,8 @@ build_rv() {
 		if [ -n "$clone_patch" ] && [ "$build_mode" = apk ]; then
 			patcher_args+=("-O packageName=${clone_pkg} -e \"${clone_patch}\"")
 		fi
-		# per-mode patch overrides (fork-specific): exclude (-d) / include (-e) patches only in
-		# this build_mode, on top of the shared included/excluded-patches already in patcher_args.
+		# Fork-specific patch overrides for one mode. They exclude (-d) or include (-e) patches in
+		# this build_mode only, on top of the shared patches already in patcher_args.
 		if [ "$build_mode" = apk ]; then
 			if [ -n "${args[apk_excluded_patches]:-}" ]; then patcher_args+=("$(join_args "${args[apk_excluded_patches]}" -d)"); fi
 			if [ -n "${args[apk_included_patches]:-}" ]; then patcher_args+=("$(join_args "${args[apk_included_patches]}" -e)"); fi
@@ -1029,7 +1036,7 @@ build_rv() {
 		if [ "${NORB:-}" != true ] || { [ ! -f "$patched_apk" ] && [ ! -f "$apk_output" ]; }; then
 			if ! patch_apk "$stock_apk_to_patch" "$patched_apk" "${patcher_args[*]}" "${args[cli]}" "${args[ptjar]}" "${args[ptjar_extra]:-}"; then
 				epr "Building '${table}' failed!"
-				break # not 'return': fall through so a mode that already shipped still records state
+				break # 'break', not 'return', so that a mode which already shipped still records its state
 			fi
 		fi
 		rm "$stock_apk_to_patch"
@@ -1046,7 +1053,7 @@ build_rv() {
 		local base_template
 		base_template=$(mktemp -d -p "$TEMP_DIR")
 		cp -a $MODULE_TEMPLATE_DIR/. "$base_template"
-		local upj # keep in sync with build.sh --list-update-jsons (shared slug helper)
+		local upj # keep in sync with build.sh --list-update-jsons, which uses the same slug helper
 		upj=$(update_json_name "$table")
 
 		module_config "$base_template" "$pkg_name" "$version" "$arch"
@@ -1067,10 +1074,11 @@ build_rv() {
 		if [ "${args[include_stock]}" != "disable" ]; then
 			mkdir -p "${base_template}/stock/"
 			local stock_mode="${args[include_stock]}"
-			# 'auto': keep the genuine developer signature wherever the source shape allows it.
-			# A bundle source leaves a "${stock_apk}.apkm" beside the merged+re-signed apk -> install
-			# its ORIGINAL signed splits (no merge, so the signature survives). A single-apk source was
-			# never merged/re-signed, so "$stock_apk" is already genuine -> ship it as-is via 'merged'.
+			# 'auto' keeps the original developer signature where the source permits it. A bundle
+			# source leaves a "${stock_apk}.apkm" beside the merged and re-signed apk. Install the
+			# original signed splits from it, because a build with no merge keeps the signature.
+			# A single-apk source is never merged or re-signed, so "$stock_apk" is already
+			# original. Ship it without a change, as 'merged'.
 			if [ "$stock_mode" = auto ]; then
 				if [ -f "${stock_apk}.apkm" ]; then stock_mode=split; else stock_mode=merged; fi
 			fi
@@ -1079,7 +1087,7 @@ build_rv() {
 			elif [ "$stock_mode" = "split" ]; then
 				if [ ! -f "${stock_apk}.apkm" ]; then
 					epr "Cannot include as 'split' because stock apk of $table_name is not a bundle"
-					break # not 'return': fall through so a mode that already shipped still records state
+					break # 'break', not 'return', so that a mode which already shipped still records its state
 				fi
 				if [ "$arch" = "arm64-v8a" ]; then
 					unzip -j "${stock_apk}.apkm" '*.apk' -x '*x86_64.apk' -x '*x86.apk' -x '*armeabi_v7a.apk' -d "${base_template}/stock/" >/dev/null 2>&1
@@ -1102,21 +1110,21 @@ build_rv() {
 		built_ok=true
 	done
 
-	# record the patch bundles this app was actually built with, keyed by its base table name
-	# (args[table_base] has no arch suffix) so config_update can skip it until a bundle changes.
+	# Record the patch bundles that built this app. The key is the base table name, because
+	# args[table_base] has no arch suffix. config_update then skips the app until a bundle changes.
 	if [ "$built_ok" = true ]; then
-		# release-notes version line (build.md) — written only now that an artifact exists, so a
-		# failed build never lands in the release notes with no APK/module to back it. The per-source
-		# "Patches:" changelog fragment is written eagerly by get_prebuilts, but build.sh emits only
-		# the fragments whose source appears in built-patches.tsv (recorded just below on success),
-		# so a failed build's bundle is likewise kept out of the release notes.
+		# The version line for the release notes in build.md. It is written now, after an artifact
+		# exists, so a failed build never enters the release notes without an APK or a module. The
+		# "Patches:" changelog part for each source is written earlier by get_prebuilts, but
+		# build.sh emits only the parts whose source appears in built-patches.tsv. The line below
+		# adds the source on success, so the bundle of a failed build also stays out.
 		log "${table}: ${version}"
 		log_built_patches "${args[table_base]}" "${args[patches_src]}" "${args[ptjar]}"
 		if [ -n "${args[ptjar_extra]:-}" ]; then
 			log_built_patches "${args[table_base]}" "${args[extra_patches_src]}" "${args[ptjar_extra]}"
 		fi
 	else
-		# reached the build loop but produced no artifact (patch or packaging failed and break'd)
+		# The build loop ran, but it made no artifact. A patch step or a packaging step broke out.
 		record_failure "$table" "patching/packaging failed (${version})"
 	fi
 }

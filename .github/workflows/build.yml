@@ -124,19 +124,19 @@ jobs:
       - name: Update modules changelog and update json
         id: update_config
         run: |
-          # capture the set of *-update.json a module-producing table should own, while
-          # config.toml + bin/ still exist on the build branch. Written outside the repo so
-          # it survives the branch switch below.
+          # Collect the *-update.json files that the module tables own, while config.toml and
+          # bin/ are still on the build branch. The list is written outside the repo, so that it
+          # survives the branch change below.
           ./build.sh config.toml --list-update-jsons | sort -u >"$RUNNER_TEMP/expected-update-jsons.txt"
 
           git checkout -f update || git switch --discard-changes --orphan update
           cp -f build.tmp build.md
 
-          # merge this run's built patch versions into the persistent state (untracked
-          # patches-built.json survives the branch switch). '+' replaces each rebuilt app's
-          # entry while leaving apps built in earlier runs untouched (unlike build.md, which
-          # is overwritten with only this run's subset).
-          [ -f patches-state.json ] || echo '{}' >patches-state.json # always present so 'git add' below can't fail
+          # Merge the patch versions built in this run into the state file. patches-built.json is
+          # untracked, so it survives the branch change. '+' replaces the entry of each rebuilt
+          # app and keeps the entries of apps built in earlier runs. build.md, in contrast, holds
+          # the apps of this run only.
+          [ -f patches-state.json ] || echo '{}' >patches-state.json # the file must exist, or the 'git add' below fails
           if [ -f patches-built.json ]; then
             jq -s '.[0] + .[1]' patches-state.json patches-built.json >patches-state.json.tmp
             mv -f patches-state.json.tmp patches-state.json
@@ -164,10 +164,10 @@ jobs:
           done
           cd ..
 
-          # prune orphaned update jsons (renamed tables / apps switched to apk-only). The
-          # allowlist is config-driven, not this run's built subset, so jsons for modules not
-          # rebuilt this run are kept. Guard: skip pruning if the list is empty (build.sh error)
-          # so a glitch can never wipe the branch.
+          # Delete orphan update jsons, left by a renamed table or by an app that changed to
+          # apk-only. The allowed list comes from the config, not from the apps built in this
+          # run, so a module that did not build in this run keeps its json. If the list is empty,
+          # build.sh failed. Skip the deletion then, so that an error cannot erase the branch.
           if [ -s "$RUNNER_TEMP/expected-update-jsons.txt" ]; then
             for j in *-update.json; do
               [ "$j" = "*-update.json" ] && continue
