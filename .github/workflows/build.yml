@@ -56,7 +56,27 @@ jobs:
         run: |
           TAG=$(gh release list -L 1 | awk -F '\t' '{print $3}')
           if [ -z "$TAG" ]; then TAG=0; fi
-          echo "NEXT_VER_CODE=$((TAG + 1))" >> $GITHUB_OUTPUT
+          NEXT=$((TAG + 1))
+          # Releases in this repo are immutable, which reserves a tag name for good: a deleted
+          # release keeps its name, and publishing under it fails late, after the whole build,
+          # with 'tag_name was used by an immutable release'. The version code comes from the
+          # latest release, so one burned name wedges every later run on the same number.
+          # Claim the tag here instead. Creating the ref fails on a burned name, so step over
+          # it. 'gh release create' below then uses the tag that already exists.
+          for _ in $(seq 1 20); do
+            if gh api "repos/$GITHUB_REPOSITORY/git/refs" -X POST \
+              -f ref="refs/tags/$NEXT" -f sha="$GITHUB_SHA" >/dev/null 2>&1; then
+              break
+            fi
+            echo "tag $NEXT is taken or reserved; trying $((NEXT + 1))"
+            NEXT=$((NEXT + 1))
+          done
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/refs/tags/$NEXT" >/dev/null 2>&1; then
+            echo "::error::Could not claim a release tag after 20 tries (last: $NEXT)."
+            exit 1
+          fi
+          echo "release tag: $NEXT"
+          echo "NEXT_VER_CODE=$NEXT" >> $GITHUB_OUTPUT
 
       - name: Build modules/APKs
         run: if [ -f "config.json" ]; then ./build.sh config.json; else ./build.sh config.toml; fi
