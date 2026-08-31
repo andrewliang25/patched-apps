@@ -6,6 +6,11 @@ on:
         type: boolean
         required: false
         default: true
+      update_cfg:
+        description: "The apps to build, as the trimmed config JSON that the CI check job printed."
+        type: string
+        required: false
+        default: ""
 
   workflow_dispatch:
 
@@ -30,13 +35,19 @@ jobs:
 
       - name: Update config
         if: ${{ inputs.from_ci }}
+        env:
+          UPDATE_CFG: ${{ inputs.update_cfg }}
         run: |
-          if git checkout origin/update patches-state.json; then
-            UPDATE_CFG=$(./build.sh config.toml --config-update)
-            if [ "$UPDATE_CFG" ]; then
-              echo "$UPDATE_CFG" > config.json
-            fi
+          # The check job in ci.yml decided which apps to build. Use its answer. Do not ask the
+          # GitHub API again here: this job has no token for that lookup, the unauthenticated
+          # call gets HTTP 403, and each patch source then looks unchanged. The empty answer
+          # wrote no config.json, and the build step below fell back to the full config.toml.
+          if [ -z "$UPDATE_CFG" ]; then
+            echo "::error::CI started a build but sent no app list. Refusing to build the full config."
+            exit 1
           fi
+          printf '%s\n' "$UPDATE_CFG" >config.json
+          cat config.json
 
       - name: Get next version code
         id: next_ver_code
