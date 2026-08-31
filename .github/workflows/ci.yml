@@ -25,17 +25,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if ! git checkout origin/update patches-state.json; then
-            echo "first time building!"
-            echo "SHOULD_BUILD=1" >> $GITHUB_OUTPUT
+          # A missing patches-state.json is not an error. config_update writes an empty state,
+          # which makes every enabled app look new, and thus prints the full config. That is
+          # what the first build wants.
+          git checkout origin/update patches-state.json || echo "first time building!"
+          # This step holds GITHUB_TOKEN, so the patch bundle lookups are authenticated. The
+          # build job must not ask again: an unauthenticated call gets HTTP 403, each source
+          # then looks unchanged, and the empty answer used to start a full rebuild.
+          UPDATE_CFG=$(./build.sh config.toml --config-update)
+          if [ "$UPDATE_CFG" ]; then
+            echo "'$UPDATE_CFG'"
+            echo "SHOULD_BUILD=1" >>"$GITHUB_OUTPUT"
+            DELIM="$(openssl rand -hex 8)"
+            {
+              echo "UPDATE_CFG<<${DELIM}"
+              echo "$UPDATE_CFG"
+              echo "${DELIM}"
+            } >>"$GITHUB_OUTPUT"
           else
-            UPDATE_CFG=$(./build.sh config.toml --config-update)
-            if [ "$UPDATE_CFG" ]; then
-              echo "'$UPDATE_CFG'"
-              echo "SHOULD_BUILD=1" >> $GITHUB_OUTPUT
-            else
-              echo "SHOULD_BUILD=0" >> $GITHUB_OUTPUT
-            fi
+            echo "SHOULD_BUILD=0" >>"$GITHUB_OUTPUT"
           fi
 
       - name: Clear older runs
@@ -46,6 +54,7 @@ jobs:
 
     outputs:
       SHOULD_BUILD: ${{ steps.should_build.outputs.SHOULD_BUILD }}
+      UPDATE_CFG: ${{ steps.should_build.outputs.UPDATE_CFG }}
 
   build:
     permissions: write-all
@@ -53,6 +62,8 @@ jobs:
     uses: ./.github/workflows/build.yml
     if: ${{ needs.check.outputs.SHOULD_BUILD == 1 }}
     secrets: inherit
+    with:
+      update_cfg: ${{ needs.check.outputs.UPDATE_CFG }}
 
   notify:
     needs: [check, build]
