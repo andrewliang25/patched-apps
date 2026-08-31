@@ -117,7 +117,9 @@ rv-brand = "Piko"
 build-mode = "apk"
 clone = true
 version = "auto"
-arch = "all"
+# The archive.org mirror holds the arm64-v8a variant of this build only. dl_archive greps the
+# folder listing for "<version>-<arch>", and falls back to "-all" alone, so "all" finds nothing.
+arch = "arm64-v8a"
 # The ghost-mode patches. InboxActionBarBuilderFingerprint broke in Piko 3.8.0 and stops the
 # run. Exclude only these patches, and not with --continue-on-error, so that other broken
 # patches still fail loudly.
