@@ -230,11 +230,11 @@ if [ -f "$TEMP_DIR"/built-patches.tsv ]; then
 	jq -Rn 'reduce (inputs | split("\t")) as $r ({}; .[$r[0]][$r[1]] = $r[2])' \
 		"$TEMP_DIR"/built-patches.tsv >"$BUILT_PATCHES_FILE"
 	# An 'auto' build that shipped below its top supported version records that version under the
-	# reserved "_pending" key of the same app, so that the next check job probes for it instead of
-	# waiting for the next bundle change. The key cannot clash with a patches source, because every
-	# source holds a '/'. Only an app that also has a built row gets the key, so the per-app merge
-	# in build.yml never replaces an app's whole state with a pending record alone. An app that
-	# builds without a step-down writes no key, and that same merge then clears it.
+	# reserved "_pending" key of the same app. The next check job then probes for it, and does not
+	# have to wait for the next bundle change. The key cannot clash with a patches source, because
+	# every source holds a '/'. Only an app that also has a built row gets the key. Thus the per-app
+	# merge in build.yml never replaces the whole state of an app with a pending record alone. An
+	# app that builds without a step-down writes no key, and that same merge clears it.
 	if [ -f "$TEMP_DIR"/pending-versions.tsv ]; then
 		jq -Rn 'reduce (inputs | split("\t")) as $r ({};
 				.[$r[0]] += [{version: $r[1], arch: $r[2], built: $r[3]}])' \
@@ -256,8 +256,8 @@ log '```'
 # Emit changelog parts only for the patch sources that shipped. built-patches.tsv is written
 # on success only, so a failed build never advertises a patch update. Remove duplicate sources
 # from the source column, but keep the first-seen order. cli-changelog.md comes last.
-# This is why step-down records live in pending-versions.tsv and not in a fourth column here: the
-# loop below reads column 2 as a patches source, and a control row would have to be filtered out.
+# This is why step-down records live in pending-versions.tsv and not in a fourth column here. The
+# loop that follows reads column 2 as a patches source, and must then remove a control row.
 cl_files=()
 if [ -f "$TEMP_DIR"/built-patches.tsv ]; then
 	while IFS= read -r built_src; do
