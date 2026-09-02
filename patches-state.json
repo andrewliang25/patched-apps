@@ -16,14 +16,7 @@
     "gitlab:inotia00/x-shim": "patches-1.7.0.mpp"
   },
   "YouTube-Morphe": {
-    "MorpheApp/morphe-patches": "patches-1.41.0.mpp",
-    "_pending": [
-      {
-        "version": "21.07.247",
-        "arch": "all",
-        "built": "21.04.223"
-      }
-    ]
+    "MorpheApp/morphe-patches": "patches-1.41.0.mpp"
   },
   "Messenger-DeVanced": {
     "RookieEnough/De-Vanced": "patches-1.3.1.mpp"
