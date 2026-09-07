@@ -1152,12 +1152,20 @@ build_rv() {
 		fi
 	fi
 
-	local microg_patch
-	microg_patch=$(grep "^Name: " <<<"$list_patches" | grep -i "gmscore\|microg" || :) microg_patch=${microg_patch#*: }
-	if [ -n "$microg_patch" ] && [[ ${p_patcher_args[*]} =~ $microg_patch ]]; then
-		wpr "You cant include/exclude microg patch as that's done by rvmm builder automatically."
-		p_patcher_args=("${p_patcher_args[@]//-[ei] ${microg_patch}/}")
-	fi
+	# Every GmsCore/MicroG patch of the bundle, because a bundle can ship more than one (LINE has
+	# two). A scalar would hold them newline-joined, which matches no patch name, and the CLI drops
+	# an unknown -e/-d silently: the module would then keep the patches this is meant to remove.
+	local -a microg_patches=()
+	local mgp
+	while IFS= read -r mgp; do
+		if [ -n "$mgp" ]; then microg_patches+=("${mgp#Name: }"); fi
+	done < <(grep "^Name: " <<<"$list_patches" | grep -i "gmscore\|microg" || :)
+	for mgp in ${microg_patches[@]+"${microg_patches[@]}"}; do
+		if [[ ${p_patcher_args[*]} == *"$mgp"* ]]; then
+			wpr "You cant include/exclude microg patch as that's done by rvmm builder automatically."
+			p_patcher_args=("${p_patcher_args[@]//-[ei] ${mgp}/}")
+		fi
+	done
 
 	# Clone, in apk mode only. The package is renamed, so the apk installs beside the official app.
 	# The module keeps the original package, because the rename patch is off in module mode.
@@ -1187,18 +1195,18 @@ build_rv() {
 	for build_mode in "${build_mode_arr[@]}"; do
 		patcher_args=("${p_patcher_args[@]}")
 		pr "Building '${table}' in '$build_mode' mode"
-		if [ -n "$microg_patch" ] || [ -n "$clone_patch" ] || [ "$per_mode_patches" = true ]; then
+		if [ ${#microg_patches[@]} -ne 0 ] || [ -n "$clone_patch" ] || [ "$per_mode_patches" = true ]; then
 			patched_apk="${TEMP_DIR}/${app_name_l}-${rv_brand_f}-${version_f}-${arch_f}-${build_mode}.apk"
 		else
 			patched_apk="${TEMP_DIR}/${app_name_l}-${rv_brand_f}-${version_f}-${arch_f}.apk"
 		fi
-		if [ -n "$microg_patch" ]; then
+		for mgp in ${microg_patches[@]+"${microg_patches[@]}"}; do
 			if [ "$build_mode" = apk ]; then
-				patcher_args+=("-e \"${microg_patch}\"")
+				patcher_args+=("-e \"${mgp}\"")
 			elif [ "$build_mode" = module ]; then
-				patcher_args+=("-d \"${microg_patch}\"")
+				patcher_args+=("-d \"${mgp}\"")
 			fi
-		fi
+		done
 		if [ -n "$clone_patch" ] && [ "$build_mode" = apk ]; then
 			patcher_args+=("-O packageName=${clone_pkg} -e \"${clone_patch}\"")
 		fi
