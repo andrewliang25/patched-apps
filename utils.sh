@@ -189,6 +189,11 @@ get_prebuilts() {
 			asset=$(jq -r ".[0]" <<<"$matches")
 			url=$(jq -r .url <<<"$asset")
 			name=$(jq -r .name <<<"$asset")
+			if [ "$tag" = "Patches" ]; then
+				local name_ext="${name##*.}"
+				name="patches-${tag_name#v}.${name_ext}"
+			fi
+
 			file="${dir}/${name}"
 			if [ "$is_gitlab" = true ]; then
 				if [ ! -f "$file" ]; then
@@ -200,14 +205,13 @@ get_prebuilts() {
 			fi
 			if [ "$tag" = CLI ]; then
 				# The CLI line goes into its own file, so build.md lists it after all Patches lines.
-				echo "$tag: $(cut -d/ -f1 <<<"$bare_src")/${name}  " >>"${TEMP_DIR}/cli-changelog.md"
+				echo "$tag: ${bare_src}/${name}  " >>"${TEMP_DIR}/cli-changelog.md"
 			else
-				echo "$tag: $(cut -d/ -f1 <<<"$bare_src")/${name}  " >>"$cl_file"
+				echo "$tag: ${bare_src}/${name}  " >>"$cl_file"
 			fi
 		else
-			grab_cl=false
 			name=$(basename "$file")
-			tag_name=$(cut -d'-' -f3- <<<"$name")
+			tag_name=$(cut -d'-' -f2- <<<"$name")
 			tag_name=v${tag_name%.*}
 		fi
 
@@ -231,7 +235,7 @@ get_prebuilts() {
 					cd "${file}-zip" || abort
 					zip -0rq "${CWD}/${file}" . || return 1
 				) >&2; then
-					echo >&2 "Patching revanced-integrations failed"
+					echo >&2 "Patching integrations checks failed"
 				fi
 				rm -r "${file}-zip" || :
 			fi
@@ -303,8 +307,14 @@ _latest_patches_name() {
 			matches=$matches_new
 		fi
 	fi
-	local name
+	local name tag_name_cu name_ext_cu
 	name=$(jq -e -r '.[0].name' <<<"$matches") || return 1
+	# get_prebuilts renames every patches asset to 'patches-<ver>.<ext>' before it writes the file,
+	# and log_built_patches records that on-disk name. Normalise identically here or the comparison
+	# in _patches_src_changed never matches and every app rebuilds on every run.
+	tag_name_cu=$(jq -e -r '.tag_name' <<<"$resp") || return 1
+	name_ext_cu="${name##*.}"
+	name="patches-${tag_name_cu#v}.${name_ext_cu}"
 	latest_cache["$key"]=$name LATEST_NAME=$name
 }
 
@@ -619,7 +629,12 @@ isoneof() {
 merge_splits() {
 	local bundle=$1 output=$2
 	pr "Merging splits"
-	gh_dl "$TEMP_DIR/apkeditor.jar" "https://github.com/REAndroid/APKEditor/releases/download/V1.4.7/APKEditor-1.4.7.jar" >/dev/null || return 1
+	if [ ! -f "$TEMP_DIR/apkeditor.jar" ]; then
+		local resp dlurl
+		resp=$(gh_req "https://api.github.com/repos/REAndroid/APKEditor/releases/latest" -) || return 1
+		dlurl=$(jq -e -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' <<<"$resp") || return 1
+		gh_dl "$TEMP_DIR/apkeditor.jar" "$dlurl" >/dev/null || return 1
+	fi
 	if ! OP=$(java -jar "$TEMP_DIR/apkeditor.jar" merge -i "$bundle" -o "${output}-unsigned" -clean-meta -f 2>&1); then
 		epr "APKEditor error: $OP"
 		return 1
