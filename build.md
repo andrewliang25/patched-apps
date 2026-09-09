@@ -1,4 +1,3 @@
-Telegram-Rushi: 12.10.0  
 Threads-Chiggi: 434.0.0.41.74  
 
 Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs  
@@ -10,10 +9,7 @@ Every APK/module is published with [GitHub build provenance attestations](https:
 ```  
 gh attestation verify <file> --repo andrewliang25/patched-apps  
 ```  
-Patches: rushiranpise/morphe-patches/patches-1.21.5.mpp  
-[Changelog](https://github.com/rushiranpise/morphe-patches/releases/tag/v1.21.5)
-
-Patches: durgesh0505/chiggi_morphe_patches/patches-1.21.0.mpp  
-[Changelog](https://github.com/durgesh0505/chiggi_morphe_patches/releases/tag/v1.21.0)
+Patches: durgesh0505/chiggi_morphe_patches/patches-1.21.2.mpp  
+[Changelog](https://github.com/durgesh0505/chiggi_morphe_patches/releases/tag/v1.21.2)
 
 CLI: MorpheApp/morphe-cli/morphe-desktop-1.15.0-all.jar    
