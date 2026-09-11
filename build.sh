@@ -130,6 +130,7 @@ for table_name in $(toml_get_table_names); do
 		app_args[extra_patches_src]=""
 	}
 	app_args[rv_brand]=$(toml_get "$t" rv-brand) || app_args[rv_brand]=$DEF_RV_BRAND
+	app_args[enable_update_checks]=$(toml_get "$t" enable-update-checks) && vtf "${app_args[enable_update_checks]}" "enable-update-checks" || app_args[enable_update_checks]="false"
 
 	app_args[excluded_patches]=$(toml_get "$t" excluded-patches) || app_args[excluded_patches]=""
 	if [ -n "${app_args[excluded_patches]}" ] && [[ ${app_args[excluded_patches]} != *'"'* ]]; then abort "patch names inside excluded-patches must be quoted"; fi

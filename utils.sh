@@ -210,6 +210,7 @@ get_prebuilts() {
 				echo "$tag: ${bare_src}/${name}  " >>"$cl_file"
 			fi
 		else
+			local grab_cl="false"
 			name=$(basename "$file")
 			tag_name=$(cut -d'-' -f2- <<<"$name")
 			tag_name=v${tag_name%.*}
@@ -1162,7 +1163,7 @@ build_rv() {
 	done < <(grep "^Name: " <<<"$list_patches" | grep -i "gmscore\|microg" || :)
 	for mgp in ${microg_patches[@]+"${microg_patches[@]}"}; do
 		if [[ ${p_patcher_args[*]} == *"$mgp"* ]]; then
-			wpr "You cant include/exclude microg patch as that's done by rvmm builder automatically."
+			wpr "Cannot include/exclude microg patch as that's done by rvmm builder automatically."
 			p_patcher_args=("${p_patcher_args[@]//-[ei] ${mgp}/}")
 		fi
 	done
@@ -1218,6 +1219,23 @@ build_rv() {
 		elif [ "$build_mode" = module ]; then
 			if [ -n "${args[module_excluded_patches]:-}" ]; then patcher_args+=("$(join_args "${args[module_excluded_patches]}" -d)"); fi
 			if [ -n "${args[module_included_patches]:-}" ]; then patcher_args+=("$(join_args "${args[module_included_patches]}" -e)"); fi
+		fi
+
+		if [ "${args[enable_update_checks]}" = "true" ] && [ "$build_mode" = "apk" ]; then
+			if [ -n "${GITHUB_REPOSITORY-}" ]; then
+				if [ "${GITHUB_REPOSITORY}" = "j-hc/revanced-magisk-module" ]; then
+					local p="$TEMP_DIR/jhc-update-check.mpp"
+					if [ ! -f $p ]; then
+						local resp dlurl
+						resp=$(gh_req "https://api.github.com/repos/j-hc/morphe-jhc-update-check-patch/releases/latest" -) || return 1
+						dlurl=$(jq -e -r '.assets[0] | .browser_download_url' <<<"$resp") || return 1
+						gh_dl $p "$dlurl" >/dev/null || return 1
+					fi
+					patcher_args+=("-p $p")
+				else
+					wpr "enable-update-checks is only implemented for j-hc/revanced-magisk-module"
+				fi
+			fi
 		fi
 
 		local stock_apk_to_patch="${stock_apk}.stripped.apk"

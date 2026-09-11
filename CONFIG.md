@@ -85,6 +85,10 @@ include-stock = "merged"                                   # 'merged', 'split', 
                                                            #   user must uninstall the app first. An uninstall erases the app data.
 exclusive-patches = false                                  # exclude all patches by default. Default: false
 
+# enables in-app update check for `apk` build-mode. default: false
+# as of now, works only for yt, yt music, twitter and gphotos
+enable-update-checks = true
+
 apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
 uptodown-dlurl = "https://spotify.en.uptodown.com/android"
 # A direct download url. It must point to an apk file with the name format of this example.
