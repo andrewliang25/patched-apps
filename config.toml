@@ -86,14 +86,18 @@ archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.instagram.ba
 apkmirror-dlurl = "https://www.apkmirror.com/apk/meta-platforms-inc/threads-instagram/"
 uptodown-dlurl = "https://threads.en.uptodown.com/android"
 
-[Photos-DeVanced]
+[Photos-Rushi]
 app-name = "Photos"
-patches-source = "RookieEnough/De-Vanced"
+patches-source = "rushiranpise/morphe-patches"
 cli-source = "MorpheApp/morphe-cli"
-rv-brand = "De-Vanced"
+rv-brand = "Rushi"
 build-mode = "both"
 include-stock = "auto"
 clone = true
+# This bundle enables 'Change package name' by default, unlike De-Vanced. build_rv only enables a
+# clone patch in apk mode; it never disables one, so the module would ship a renamed package and
+# could not mount over the stock app. Turn it off for the module.
+module-excluded-patches = "'Change package name'"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
 uptodown-dlurl = "https://google-photos.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.google.android.apps.photos"
