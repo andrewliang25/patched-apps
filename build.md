@@ -1,6 +1,4 @@
-Facebook-DeVanced: 490.0.0.63.82  
-Messenger-DeVanced: 573.0.0.44.88  
-YouTube-Morphe: 21.13.164  
+Photos-Rushi: 7.90.0.971743778  
 
 Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs  
 Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach patched apps from Play Store  
@@ -11,10 +9,7 @@ Every APK/module is published with [GitHub build provenance attestations](https:
 ```  
 gh attestation verify <file> --repo andrewliang25/patched-apps  
 ```  
-Patches: RookieEnough/De-Vanced/patches-1.4.0.mpp  
-[Changelog](https://github.com/RookieEnough/De-Vanced/releases/tag/v1.4.0)
-
-Patches: MorpheApp/morphe-patches/patches-1.42.0.mpp  
-[Changelog](https://github.com/MorpheApp/morphe-patches/releases/tag/v1.42.0)
+Patches: rushiranpise/morphe-patches/patches-1.21.5.mpp  
+[Changelog](https://github.com/rushiranpise/morphe-patches/releases/tag/v1.21.5)
 
 CLI: MorpheApp/morphe-cli/morphe-desktop-1.15.1-all.jar    
