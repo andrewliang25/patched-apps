@@ -12,7 +12,7 @@
     "RookieEnough/De-Vanced": "patches-1.4.0.mpp"
   },
   "LINE-Andrew": {
-    "andrewliang25/morphe-patches": "patches-2.1.0.mpp"
+    "andrewliang25/morphe-patches": "patches-3.0.0.mpp"
   },
   "Reddit-Morphe": {
     "MorpheApp/morphe-patches": "patches-1.43.0.mpp"
@@ -31,5 +31,8 @@
   },
   "YouTube-Morphe": {
     "MorpheApp/morphe-patches": "patches-1.43.0.mpp"
+  },
+  "Facebook-Andrew": {
+    "andrewliang25/morphe-patches": "patches-3.0.0.mpp"
   }
 }
