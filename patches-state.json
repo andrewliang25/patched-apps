@@ -28,5 +28,8 @@
   },
   "Photos-Rushi": {
     "rushiranpise/morphe-patches": "patches-1.21.5.mpp"
+  },
+  "YouTube-Morphe": {
+    "MorpheApp/morphe-patches": "patches-1.43.0.mpp"
   }
 }

@@ -1,5 +1,3 @@
-Music-Morphe: 9.15.51  
-Reddit-Morphe: 2026.14.0  
 YouTube-Morphe: 21.13.164  
 
 Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs  
