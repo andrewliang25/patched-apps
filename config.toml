@@ -44,34 +44,24 @@ archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.reddit.front
 uptodown-dlurl = "https://reddit-official-app.en.uptodown.com/android"
 dpi = "120-640dpi"
 
-[Facebook-DeVanced]
+[Facebook-Andrew]
 app-name = "Facebook"
-patches-source = "RookieEnough/De-Vanced"
+patches-source = "andrewliang25/morphe-patches"
 cli-source = "MorpheApp/morphe-cli"
-rv-brand = "De-Vanced"
+rv-brand = "Andrew"
 build-mode = "both"
 include-stock = "auto"
-clone = true
+# The bundle supports one build, 577.0.0.50.72, so 'auto' has no lower version as a step-down
+# target. If the archive.org mirror does not hold that exact build, the build stops at
+# 'stock apk download failed'.
 version = "auto"
 arch = "arm64-v8a"
+# There is no 'clone', because the bundle has no rename patch for katana. Thus the non-root apk
+# keeps com.facebook.katana and replaces the official app.
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.facebook.katana"
+# uptodown lists 577.0.0.50.72, but it serves no arm64-v8a file for that build. Thus archive is
+# the only source that works.
 uptodown-dlurl = "https://facebook.en.uptodown.com/android"
-
-[Messenger-DeVanced]
-app-name = "Messenger"
-patches-source = "RookieEnough/De-Vanced"
-cli-source = "MorpheApp/morphe-cli"
-rv-brand = "De-Vanced"
-build-mode = "both"
-include-stock = "auto"
-clone = true
-# The orca patches set no version limit, so 'auto' falls back to the latest downloadable build.
-version = "auto"
-arch = "arm64-v8a"
-# The fingerprint is gone from Messenger 563.x. Remove this line after De-Vanced fixes the patch.
-excluded-patches = "'Hide inbox ads'"
-archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.facebook.orca"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/facebook-2/messenger/"
 
 [Threads-Chiggi]
 app-name = "Threads"
@@ -169,8 +159,8 @@ arch = "arm64-v8a"
 # This keeps the original split signature of LINE, which its server-side integrity checks need.
 include-stock = "auto"
 # Only the re-signed apk needs the push-notification fix. The module must not have it.
-apk-included-patches = "'Fix push notifications'"
-module-excluded-patches = "'Fix push notifications'"
+apk-included-patches = "'[Fix] Restore push notifications'"
+module-excluded-patches = "'[Fix] Restore push notifications'"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/jp.naver.line.android"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/line-corporation/line"
 uptodown-dlurl = "https://line.en.uptodown.com/android"
