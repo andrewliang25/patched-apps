@@ -21,14 +21,13 @@ Contributors: [sign your commits](CONTRIBUTING.md#signing-your-commits) so that 
 | --- | --- | --- | :-: | :-: | --- |
 | <div align="center"><img src="assets/icons/youtube.svg" width="28"><br><b>YouTube</b></div> | Morphe | No video ads, SponsorBlock, background playback, Return YouTube Dislike, custom themes | ✅ | ✅ | The APK is renamed and needs MicroG-RE |
 | <div align="center"><img src="assets/icons/ytmusic.svg" width="28"><br><b>YT Music</b></div> | Morphe | No ads, background playback, exclusive-audio mode, minimized playback | ✅ | ✅ | arm64-v8a. The APK is renamed and needs MicroG-RE |
-| <div align="center"><img src="assets/icons/googlephotos.svg" width="28"><br><b>Google Photos</b></div> | Rushi | Unlimited backup at original quality, no device or account model lock, backup control for each DCIM folder, correct grouping of non-Camera DCIM folders | ✅ | ✅ | The APK is renamed to `app.morphe.android.apps.photos`, is labelled **Photos Morphe**, and needs MicroG-RE. The patches moved from De-Vanced to Rushi. See [Google Photos: moved to Rushi](#google-photos-moved-to-rushi) |
+| <div align="center"><img src="assets/icons/googlephotos.svg" width="28"><br><b>Google Photos</b></div> | Rushi | Unlimited backup at original quality, no device or account model lock, backup control for each DCIM folder, correct grouping of non-Camera DCIM folders | ✅ | ✅ | The APK is renamed to `app.morphe.android.apps.photos`, is labelled **Photos Morphe**, and needs MicroG-RE |
 | <div align="center"><img src="assets/icons/instagram.svg" width="28"><br><b>Instagram</b></div> | Piko | Block ads and sponsored posts, download photos, videos and reels, hide story "seen", turn off typing and read receipts | ✅ | ❌ | The APK is renamed to `app.piko.instagram.android`. **Experimental**, and APK only, see [Instagram: APK only](#instagram-apk-only) |
-| <div align="center"><img src="assets/icons/facebook.svg" width="28"><br><b>Facebook</b></div> | De-Vanced | Block ads and sponsored posts, cleaner feed | ✅ | ✅ | arm64-v8a. It follows the build that De-Vanced supports, `490.0.0.63.82`. The APK is renamed to `app.devanced.facebook.katana`. **Experimental**, see the [permission conflict](#meta-app-clones-duplicate-permission-conflict) |
-| <div align="center"><img src="assets/icons/messenger.svg" width="28"><br><b>Messenger</b></div> | De-Vanced | Remove Meta AI, hide Facebook buttons and shortcuts, hide inbox subtabs, hide the inbox stories and notes tray, turn off the typing indicator, open links in your browser | ✅ | ✅ | arm64-v8a. It follows the build that De-Vanced supports, `573.0.0.44.88`. The APK is renamed to `app.devanced.facebook.orca`. **Experimental**, see the [permission conflict](#meta-app-clones-duplicate-permission-conflict). `Hide inbox ads` is excluded |
+| <div align="center"><img src="assets/icons/facebook.svg" width="28"><br><b>Facebook</b></div> | Andrew | Hide sponsored posts, reels and stories, hide suggested and promoted posts, block background ad prefetch and ad telemetry, turn off Audience Network | ✅ | ✅ | arm64-v8a. The stock APK is self-hosted on archive.org, and the bundle supports one build only. It is not renamed, so the non-root APK **replaces** the official app. Uninstall that app first. **Experimental** |
 | <div align="center"><img src="assets/icons/threads.svg" width="28"><br><b>Threads</b></div> | Chiggi | Hide ads, remove the AD_ID (advertising ID) permission | ✅ | ✅ | arm64-v8a. The APK is renamed to `app.chiggi.instagram.barcelona`. **Experimental**, see the [permission conflict](#meta-app-clones-duplicate-permission-conflict) |
 | <div align="center"><img src="assets/icons/reddit.svg" width="28"><br><b>Reddit</b></div> | Morphe | Block ads, clean share links, hide recommendations and premium prompts, custom branding | ✅ | ✅ | The APK is not renamed and keeps `com.reddit.frontpage`, so uninstall the official app before you install it. See [Reddit: not renamed](#reddit-not-renamed) |
 | <div align="center"><img src="assets/icons/twitter.svg" width="28"><br><b>Twitter / X</b></div> | Piko | Hide ads and promoted tweets, download media, restore the chronological timeline, hide view counts | ✅ | ✅ | Not cloned. The APK and the module both use `com.twitter.android`. Uninstall the app that has this package before you install one of them |
-| <div align="center"><img src="assets/icons/telegram.svg" width="28"><br><b>Telegram</b></div> | Rushi | Remove ads, unlock Premium, keep deleted and disappearing messages, save restricted media, hide the typing indicator, faster downloads | ✅ | ✅ | arm64-v8a. It targets the Play Store build `org.telegram.messenger`. The stock APK is self-hosted on archive.org and pinned to build 12.10.0 (versionCode 70242). It is not renamed, so the non-root APK **replaces** the official app. Uninstall that app first. The APK also needs MicroG-RE |
+| <div align="center"><img src="assets/icons/telegram.svg" width="28"><br><b>Telegram</b></div> | Rushi | Remove ads, unlock Premium, keep deleted and disappearing messages, save restricted media, hide the typing indicator, faster downloads | ✅ | ✅ | arm64-v8a. It targets the Play Store build `org.telegram.messenger`. The stock APK is self-hosted on archive.org and follows the build that the bundle targets. It is not renamed, so the non-root APK **replaces** the official app. Uninstall that app first. The APK also needs MicroG-RE |
 | <div align="center"><img src="assets/icons/line.svg" width="28"><br><b>LINE</b></div> | Andrew | Hide ads and banners, remove the VOOM, Wallet and LINE TODAY tabs, hide Home modules, keep chats unread (no read receipts), open links outside the app | ✅ | ✅ | arm64-v8a. The stock APK is self-hosted on archive.org. It is not renamed and shares `jp.naver.line.android` with the Play Store build. Uninstall the official app before you install the non-root APK |
 
 Each app is one config entry, and it makes two output types:
@@ -40,20 +39,18 @@ Each app is one config entry, and it makes two output types:
 
 ## Installation
 
-* The non-root YouTube, YT Music and Google Photos APKs need [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases).
+* The non-root YouTube, YT Music, Google Photos and Telegram APKs need [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases).
 * For every KernelSU/Magisk module, add the target app to the Zygisk **DenyList**, or the mount does not apply. Then use [**zygisk-detach**](https://github.com/j-hc/zygisk-detach) to detach the app from the Play Store, so that the Play Store cannot update it.
 
 ### Meta app clones: duplicate permission conflict
 
 `INSTALL_FAILED_DUPLICATE_PERMISSION` occurs when an app declares a custom `<permission>` whose name an installed app already owns, and the two apps have **different signing certificates**. Apps that share permission names and have the **same** signing key install together.
 
-Meta apps declare shared family permissions across Facebook and Messenger, for example `com.facebook.permission.prod.FB_APP_COMMUNICATION`. The rename patch keeps those `com.facebook.*` permission **names**. Thus the conflict is between a clone and the official Meta app, not between two clones:
+Meta apps declare shared family permissions, for example `com.facebook.permission.prod.FB_APP_COMMUNICATION`. The rename patch keeps those permission **names**. Thus the conflict is between a clone and the official Meta app that owns the name.
 
-* **The clones install together.** This repo signs Facebook (`app.devanced.facebook.katana`) and Messenger (`app.devanced.facebook.orca`) with one key, so they share a signature.
-* **A clone conflicts with the official app.** The Play Store Facebook and Messenger own `com.facebook.*` under the certificate of Meta. A clone signed by this repo declares the same names under a different certificate, which gives `INSTALL_FAILED_DUPLICATE_PERMISSION`. You cannot install a Meta-signed member and a repo-signed member of the `com.facebook.*` family at the same time. Any number of repo-signed members is permitted.
-* **Threads** behaves the same way. The repo-signed Threads clone conflicts with the official Threads on the shared permissions of Threads.
+This applies to **Threads** alone. The clone `app.chiggi.instagram.barcelona` declares the permission names of Threads under the certificate of this repo. Thus it conflicts with the official Threads app.
 
-There are two workarounds. Uninstall the official Meta app first, or use the root **module**, which keeps the original package and needs no permission rename.
+There are two workarounds. Uninstall the official Threads app first, or use the root **module**, which keeps the original package and needs no permission rename.
 
 ### Instagram: APK only
 
@@ -62,15 +59,6 @@ Instagram ships the clone APK `app.piko.instagram.android` only. On a module, wh
 ### Reddit: not renamed
 
 The non-root Reddit APK keeps `com.reddit.frontpage`, so it does not install beside the official Reddit app. This repo signs the APK with a throwaway key, and Android refuses to install it over the official app. Uninstall the official Reddit app first. An uninstall erases the app data.
-
-### Google Photos: moved to Rushi
-
-Google Photos used the De-Vanced patches. It now uses [the morphe-patches of rushiranpise](https://github.com/rushiranpise/morphe-patches). The new bundle adds control of the backup of each DCIM folder and correct grouping of non-Camera DCIM folders. It follows the build `7.90.0.971743778`.
-
-The two outputs behave differently after the move:
-
-* **The non-root APK updates in place.** The patch of each bundle sets the same clone package, `app.morphe.android.apps.photos`, and this repo signs both builds with one key. Thus the new APK is an ordinary update of the old one. Only the launcher name changes, from **Photos** to **Photos Morphe**.
-* **The module does not update in place.** Its id changes from `photos-devanced-andrew` to `photos-rushi-andrew`, so Magisk shows it as a new module. Remove the old module first, then flash this one.
 
 ## Local builds
 
@@ -92,14 +80,14 @@ $ ./build.sh
 * Read [`CONFIG.md`](./CONFIG.md) for all options.
 * Start the [Build workflow](../../actions/workflows/build.yml), or wait for the daily CI run. Then get the outputs from the [releases](../../releases).
 
-Twitter and Instagram use [Piko](https://github.com/crimera/piko). Facebook and Messenger use [De-Vanced](https://github.com/RookieEnough/De-Vanced). Threads uses [Chiggi](https://github.com/durgesh0505/chiggi_morphe_patches). Telegram and Google Photos use [the morphe-patches of rushiranpise](https://github.com/rushiranpise/morphe-patches), and LINE uses [the morphe-patches of Andrew](https://github.com/andrewliang25/morphe-patches). The [Morphe CLI](https://github.com/MorpheApp/morphe-cli) drives all of them. Each stock APK is verified against the official signing certificate of the app, which `sig.txt` holds.
+Twitter and Instagram use [Piko](https://github.com/crimera/piko). Threads uses [Chiggi](https://github.com/durgesh0505/chiggi_morphe_patches). Telegram and Google Photos use [the morphe-patches of rushiranpise](https://github.com/rushiranpise/morphe-patches), and Facebook and LINE use [the morphe-patches of Andrew](https://github.com/andrewliang25/morphe-patches). The [Morphe CLI](https://github.com/MorpheApp/morphe-cli) drives all of them. Each stock APK is verified against the official signing certificate of the app, which `sig.txt` holds.
 
 ### Config notes
 
 The config holds short notes only. The settings that follow need more explanation:
 
-* **`clone = true`** (Facebook, Messenger, Threads, Photos, Reddit) — with `build-mode = "both"`, the non-root APK gets the package name `app.<patch>.<pkg>` and installs beside the official app. The module keeps the original package, so that it can mount over stock. Four tables differ. Photos is cloned, but its patch sets the name, so the clone is `app.morphe.android.apps.photos` and not `app.rushi.*`. This was true of De-Vanced too, see [Google Photos: moved to Rushi](#google-photos-moved-to-rushi). Instagram has `clone = true` but ships an APK only, see [Instagram: APK only](#instagram-apk-only). Reddit has `clone = true`, but the build does not rename it, see [Reddit: not renamed](#reddit-not-renamed). Twitter ships both outputs and is not cloned, because the `Clone` patch of Piko does not cover `com.twitter.android`.
-* **Self-hosted stock APKs (archive.org)** — Facebook, Messenger, Twitter, Instagram, Threads and LINE are mirrored on a self-hosted archive.org item, because the public sources do not serve their builds. They use `auto`. If the mirror has no newer version, they fall back to the second source of the app.
+* **`clone = true`** (Threads, Photos, Reddit, Instagram) — with `build-mode = "both"`, the non-root APK gets the package name `app.<patch>.<pkg>` and installs beside the official app. The module keeps the original package, so that it can mount over stock. Three tables differ. Photos is cloned, but its patch sets the name, so the clone is `app.morphe.android.apps.photos` and not `app.rushi.*`. Instagram ships an APK only, see [Instagram: APK only](#instagram-apk-only). Reddit has `clone = true`, but the build does not rename it, see [Reddit: not renamed](#reddit-not-renamed). Twitter ships both outputs and is not cloned, because the `Clone` patch of Piko does not cover `com.twitter.android`.
+* **Self-hosted stock APKs (archive.org)** — every app has a mirror on a self-hosted archive.org item, and the build tries that mirror before apkmirror and uptodown. Facebook, Twitter, Instagram, Threads, Telegram and LINE need the mirror, because the public sources do not serve their builds. If a source cannot serve the wanted build, the build tries the next source of the app.
 * **`enable-module-update`** — set it to `false` to stop in-app updates of the modules.
 
 ### CI notifications
@@ -118,4 +106,4 @@ These builds come **as-is, with no warranty**, for personal and educational use.
 
 ## Credits
 
-This project is a fork of [j-hc/revanced-magisk-module](https://github.com/j-hc/revanced-magisk-module). All credit for the builder, the module template and the helper tooling goes to [j-hc](https://github.com/j-hc). The patches come from [ReVanced](https://github.com/ReVanced), [Morphe](https://github.com/MorpheApp), [Piko (crimera)](https://github.com/crimera/piko), [De-Vanced (RookieEnough)](https://github.com/RookieEnough/De-Vanced), [Chiggi (durgesh0505)](https://github.com/durgesh0505/chiggi_morphe_patches) and [the morphe-patches of rushiranpise](https://github.com/rushiranpise/morphe-patches).
+This project is a fork of [j-hc/revanced-magisk-module](https://github.com/j-hc/revanced-magisk-module). All credit for the builder, the module template and the helper tooling goes to [j-hc](https://github.com/j-hc). The patches come from [ReVanced](https://github.com/ReVanced), [Morphe](https://github.com/MorpheApp), [Piko (crimera)](https://github.com/crimera/piko), [Chiggi (durgesh0505)](https://github.com/durgesh0505/chiggi_morphe_patches) and [the morphe-patches of rushiranpise](https://github.com/rushiranpise/morphe-patches).
