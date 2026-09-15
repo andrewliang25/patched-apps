@@ -11,6 +11,10 @@ include-stock = "auto"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
 uptodown-dlurl = "https://youtube.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.google.android.youtube"
+# The icon must differ from Music: both apps share one icon set in the bundle, and
+# 'Automatic' resolves to 'black' for each. The -O must precede an -e of the same -p group
+# or morphe-cli drops it silently, hence the explicit -e of the (already default-on) patch.
+patcher-args = "-O appIcon=play_black -e 'Custom branding'"
 
 [Music-Morphe]
 app-name = "Music"
@@ -23,6 +27,9 @@ arch = "arm64-v8a"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube-music"
 uptodown-dlurl = "https://youtube-music.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.google.android.apps.youtube.music"
+# Keeps the current icon ('Automatic' already resolves to 'black'), stated so that the
+# choice survives a change of the patch default. See the note in [YouTube-Morphe].
+patcher-args = "-O appIcon=black -e 'Custom branding'"
 
 [Reddit-Morphe]
 app-name = "Reddit"
