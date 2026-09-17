@@ -51,16 +51,11 @@ cli-source = "MorpheApp/morphe-cli"
 rv-brand = "Andrew"
 build-mode = "both"
 include-stock = "auto"
-# The bundle supports one build, 577.0.0.50.72, so 'auto' has no lower version as a step-down
-# target. If the archive.org mirror does not hold that exact build, the build stops at
-# 'stock apk download failed'.
 version = "auto"
 arch = "arm64-v8a"
 # There is no 'clone', because the bundle has no rename patch for katana. Thus the non-root apk
 # keeps com.facebook.katana and replaces the official app.
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.facebook.katana"
-# uptodown lists 577.0.0.50.72, but it serves no arm64-v8a file for that build. Thus archive is
-# the only source that works.
 uptodown-dlurl = "https://facebook.en.uptodown.com/android"
 
 [Threads-Chiggi]
@@ -78,7 +73,6 @@ arch = "arm64-v8a"
 # turns it off separately.
 excluded-patches = "'Change app name'"
 module-excluded-patches = "'Change package name'"
-# archive is the only source that serves 434.0.0.41.74. apkmirror returns 403 and uptodown hides it.
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.instagram.barcelona"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/meta-platforms-inc/threads-instagram/"
 uptodown-dlurl = "https://threads.en.uptodown.com/android"
@@ -118,8 +112,6 @@ rv-brand = "Piko"
 build-mode = "apk"
 clone = true
 version = "auto"
-# The archive.org mirror holds the arm64-v8a variant of this build only. dl_archive greps the
-# folder listing for "<version>-<arch>", and falls back to "-all" alone, so "all" finds nothing.
 arch = "arm64-v8a"
 # The ghost-mode patches. InboxActionBarBuilderFingerprint broke in Piko 3.8.0 and stops the
 # run. Exclude only these patches, and not with --continue-on-error, so that other broken
@@ -138,8 +130,6 @@ build-mode = "both"
 # The Play Store package. There is no 'clone', because the bundle has no rename patch for it.
 # Thus the non-root apk replaces the official install instead of installing beside it.
 include-stock = "auto"
-# The mirrored build is the arm64 and 480dpi variant of 12.10.0 (code 70242). The fingerprints
-# of the bundle target this build. The universal 12.10.0 upload is a later re-release.
 arch = "arm64-v8a"
 dpi = "480dpi"
 # There is no uptodown source. Its 'telegram' slug is the org.telegram.messenger.web build.
