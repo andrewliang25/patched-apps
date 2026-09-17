@@ -858,7 +858,7 @@ get_archive_resp() {
 	r=$(req "$1" -)
 	if [ -z "$r" ]; then return 1; else __ARCHIVE_RESP__=$(sed -n 's;^<a href="\(.*\)"[^"]*;\1;p' <<<"$r"); fi
 }
-get_archive_vers() { sed 's/^[^-]*-//;s/-\(all\|arm64-v8a\|arm-v7a\)\.apkm\{0,1\}//g' <<<"$__ARCHIVE_RESP__"; }
+get_archive_vers() { sed 's/^[^-]*-//;s/-\(all\|arm64-v8a\|arm-v7a\)\.\(apk\|apkm\)//g' <<<"$__ARCHIVE_RESP__"; }
 get_archive_pkg_name() { echo "$__ARCHIVE_PKG_NAME__"; }
 # get_archive_resp makes one request for the folder listing. dl_archive then decides from that
 # listing alone, so the listing is an exact oracle: no download and no second request. The cache
@@ -1192,6 +1192,17 @@ build_rv() {
 		fi
 	fi
 
+	# Upstream disables the bundle's 'Custom branding' patch in module mode: the module mounts over
+	# the stock app, so a renamed app or icon would not match the package that is installed. Config
+	# wins — naming the patch in patcher-args/included-patches (as YouTube and Music do for their
+	# icons) clears this, and the patch is then left exactly as config asked for, in both modes.
+	local branding_patch
+	branding_patch=$(grep "^Name: " <<<"$list_patches" | grep -m1 -i "custom branding" || :)
+	branding_patch=${branding_patch#*: }
+	if [ -n "$branding_patch" ] && [[ ${p_patcher_args[*]} == *"$branding_patch"* ]]; then
+		branding_patch=""
+	fi
+
 	# Patch overrides for one mode make the apk and the module differ. Thus each mode must write to
 	# its own filename, as microg and clone do, or one mode overwrites the file of the other.
 	local per_mode_patches=false
@@ -1206,7 +1217,7 @@ build_rv() {
 	for build_mode in "${build_mode_arr[@]}"; do
 		patcher_args=("${p_patcher_args[@]}")
 		pr "Building '${table}' in '$build_mode' mode"
-		if [ ${#microg_patches[@]} -ne 0 ] || [ -n "$clone_patch" ] || [ "$per_mode_patches" = true ]; then
+		if [ ${#microg_patches[@]} -ne 0 ] || [ -n "$clone_patch" ] || [ -n "$branding_patch" ] || [ "$per_mode_patches" = true ]; then
 			patched_apk="${TEMP_DIR}/${app_name_l}-${rv_brand_f}-${version_f}-${arch_f}-${build_mode}.apk"
 		else
 			patched_apk="${TEMP_DIR}/${app_name_l}-${rv_brand_f}-${version_f}-${arch_f}.apk"
@@ -1221,14 +1232,18 @@ build_rv() {
 		if [ -n "$clone_patch" ] && [ "$build_mode" = apk ]; then
 			patcher_args+=("-O packageName=${clone_pkg} -e \"${clone_patch}\"")
 		fi
-		# Fork-specific patch overrides for one mode. They exclude (-d) or include (-e) patches in
-		# this build_mode only, on top of the shared patches already in patcher_args.
+		# Per-mode patch selection: upstream's branding -d, then the fork's per-mode overrides. All
+		# exclude (-d) or include (-e) patches in this build_mode only, on top of the shared
+		# patches already in patcher_args.
 		if [ "$build_mode" = apk ]; then
 			if [ -n "${args[apk_excluded_patches]:-}" ]; then patcher_args+=("$(join_args "${args[apk_excluded_patches]}" -d)"); fi
 			if [ -n "${args[apk_included_patches]:-}" ]; then patcher_args+=("$(join_args "${args[apk_included_patches]}" -e)"); fi
 		elif [ "$build_mode" = module ]; then
+			if [ -n "$branding_patch" ]; then patcher_args+=("-d \"${branding_patch}\""); fi
 			if [ -n "${args[module_excluded_patches]:-}" ]; then patcher_args+=("$(join_args "${args[module_excluded_patches]}" -d)"); fi
 			if [ -n "${args[module_included_patches]:-}" ]; then patcher_args+=("$(join_args "${args[module_included_patches]}" -e)"); fi
+		else
+			abort "unreachable build mode: $build_mode"
 		fi
 
 		if [ "${args[enable_update_checks]}" = "true" ] && [ "$build_mode" = "apk" ]; then
