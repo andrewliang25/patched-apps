@@ -9,7 +9,6 @@ rv-brand = "Morphe"
 build-mode = "both"
 include-stock = "auto"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
-uptodown-dlurl = "https://youtube.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.google.android.youtube"
 # The icon must differ from Music: both apps share one icon set in the bundle, and
 # 'Automatic' resolves to 'black' for each. The -O must precede an -e of the same -p group
@@ -25,7 +24,6 @@ build-mode = "both"
 include-stock = "auto"
 arch = "arm64-v8a"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube-music"
-uptodown-dlurl = "https://youtube-music.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.google.android.apps.youtube.music"
 # Keeps the current icon ('Automatic' already resolves to 'black'), stated so that the
 # choice survives a change of the patch default. See the note in [YouTube-Morphe].
@@ -41,7 +39,6 @@ include-stock = "auto"
 clone = true
 apkmirror-dlurl = "https://www.apkmirror.com/apk/redditinc/reddit/"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.reddit.frontpage"
-uptodown-dlurl = "https://reddit-official-app.en.uptodown.com/android"
 dpi = "120-640dpi"
 
 [Facebook-Andrew]
@@ -56,7 +53,6 @@ arch = "arm64-v8a"
 # There is no 'clone', because the bundle has no rename patch for katana. Thus the non-root apk
 # keeps com.facebook.katana and replaces the official app.
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.facebook.katana"
-uptodown-dlurl = "https://facebook.en.uptodown.com/android"
 
 [Threads-Chiggi]
 app-name = "Threads"
@@ -75,7 +71,6 @@ excluded-patches = "'Change app name'"
 module-excluded-patches = "'Change package name'"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.instagram.barcelona"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/meta-platforms-inc/threads-instagram/"
-uptodown-dlurl = "https://threads.en.uptodown.com/android"
 
 [Photos-Rushi]
 app-name = "Photos"
@@ -90,7 +85,6 @@ clone = true
 # could not mount over the stock app. Turn it off for the module.
 module-excluded-patches = "'Change package name'"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
-uptodown-dlurl = "https://google-photos.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.google.android.apps.photos"
 
 ["Twitter/X-Piko"]
@@ -119,7 +113,6 @@ arch = "arm64-v8a"
 excluded-patches = "'Disable typing status' 'View DMs anonymously' 'View live anonymously' 'View stories anonymously'"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/com.instagram.android"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram/"
-uptodown-dlurl = "https://instagram.en.uptodown.com/android"
 
 [Telegram-Rushi]
 app-name = "Telegram"
@@ -132,7 +125,6 @@ build-mode = "both"
 include-stock = "auto"
 arch = "arm64-v8a"
 dpi = "480dpi"
-# There is no uptodown source. Its 'telegram' slug is the org.telegram.messenger.web build.
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/org.telegram.messenger"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/telegram-fz-llc/telegram/"
 
@@ -153,4 +145,3 @@ apk-included-patches = "'[Fix] Restore push notifications'"
 module-excluded-patches = "'[Fix] Restore push notifications'"
 archive-dlurl = "https://archive.org/download/andrews-apks/apks/jp.naver.line.android"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/line-corporation/line"
-uptodown-dlurl = "https://line.en.uptodown.com/android"

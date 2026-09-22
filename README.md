@@ -89,7 +89,7 @@ Twitter and Instagram use [Piko](https://github.com/crimera/piko). Threads uses 
 The config holds short notes only. The settings that follow need more explanation:
 
 * **`clone = true`** (Threads, Photos, Reddit, Instagram) — with `build-mode = "both"`, the non-root APK gets the package name `app.<patch>.<pkg>` and installs beside the official app. The module keeps the original package, so that it can mount over stock. Three tables need a note. Photos is cloned, but its patch sets the name, so the clone is `app.morphe.android.apps.photos` and not `app.rushi.*`. Instagram ships an APK only, see [Instagram: APK only](#instagram-apk-only). Reddit was not renamed up to release 67, see [Reddit: renamed](#reddit-renamed). Twitter ships both outputs and is not cloned, because the `Clone` patch of Piko does not cover `com.twitter.android`.
-* **Self-hosted stock APKs (archive.org)** — every app has a mirror on a self-hosted archive.org item, and the build tries that mirror before apkmirror and uptodown. Facebook, Twitter, Instagram, Threads, Telegram and LINE need the mirror, because the public sources do not serve their builds. If a source cannot serve the wanted build, the build tries the next source of the app.
+* **Self-hosted stock APKs (archive.org)** — every app has a mirror on a self-hosted archive.org item, and the build tries that mirror before apkmirror. Facebook, Twitter, Instagram, Threads, Telegram and LINE need the mirror, because the public sources do not serve their builds. If a source cannot serve the wanted build, the build tries the next source of the app.
 * **`enable-module-update`** — set it to `false` to stop in-app updates of the modules.
 
 ### CI notifications

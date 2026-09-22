@@ -4,7 +4,6 @@ To add another app, write this:
 ```toml
 [Some-App]
 apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
-# or uptodown-dlurl = "https://app.en.uptodown.com/android"
 ```
 
 > [!WARNING]
@@ -90,11 +89,10 @@ exclusive-patches = false                                  # exclude all patches
 enable-update-checks = true
 
 apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
-uptodown-dlurl = "https://spotify.en.uptodown.com/android"
 # A direct download url. It must point to an apk file with the name format of this example.
 direct-dlurl = "https://website/com.google.android.youtube-20.40.45-all.apk"
-# A self-hosted archive.org source, for an app that apkmirror or uptodown does not serve
-# reliably. Point it at an archive.org folder whose path ends with the package name. The folder
+# A self-hosted archive.org source, for an app that apkmirror does not serve well.
+# Point it at an archive.org folder whose path ends with the package name. The folder
 # holds files named <pkg>-<version>-<arch>.apk or .apkm. The build merges an .apkm bundle.
 archive-dlurl = "https://archive.org/download/my-apks/apks/com.google.android.youtube"
 
