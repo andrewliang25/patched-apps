@@ -1163,6 +1163,11 @@ build_rv() {
 		fi
 	fi
 
+	# patcher-args joins the shared args here, before the microg and branding checks below: both ask
+	# whether config already names the patch they are about to toggle, and patcher-args is one of the
+	# places config can name it.
+	if [ "${args[patcher_args]}" ]; then p_patcher_args+=("${args[patcher_args]}"); fi
+
 	# Every GmsCore/MicroG patch of the bundle, because a bundle can ship more than one (LINE has
 	# two). A scalar would hold them newline-joined, which matches no patch name, and the CLI drops
 	# an unknown -e/-d silently: the module would then keep the patches this is meant to remove.
@@ -1222,7 +1227,6 @@ build_rv() {
 	local patcher_args patched_apk build_mode
 	local rv_brand_f=${args[rv_brand],,}
 	rv_brand_f=${rv_brand_f//[^a-z0-9]/-} # slug for filenames: a space, '+' or other character becomes '-'
-	if [ "${args[patcher_args]}" ]; then p_patcher_args+=("${args[patcher_args]}"); fi
 	for build_mode in "${build_mode_arr[@]}"; do
 		patcher_args=("${p_patcher_args[@]}")
 		pr "Building '${table}' in '$build_mode' mode"
