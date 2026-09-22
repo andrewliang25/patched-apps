@@ -1,6 +1,7 @@
 Music-Morphe: 9.15.51  
 Reddit-Morphe: 2026.14.0  
-YouTube-Morphe: 21.13.164  
+Threads-Chiggi: 434.0.0.41.74  
+YouTube-Morphe: 21.16.256  
 
 Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs  
 Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach patched apps from Play Store  
@@ -13,5 +14,8 @@ gh attestation verify <file> --repo andrewliang25/patched-apps
 ```  
 Patches: MorpheApp/morphe-patches/patches-1.44.0.mpp  
 [Changelog](https://github.com/MorpheApp/morphe-patches/releases/tag/v1.44.0)
+
+Patches: durgesh0505/chiggi_morphe_patches/patches-1.23.1.mpp  
+[Changelog](https://github.com/durgesh0505/chiggi_morphe_patches/releases/tag/v1.23.1)
 
 CLI: MorpheApp/morphe-cli/morphe-desktop-1.16.0-all.jar    
