@@ -1182,10 +1182,19 @@ build_rv() {
 	# The module keeps the original package, because the rename patch is off in module mode.
 	local clone_patch="" clone_pkg=""
 	if [ "${args[clone]}" = true ]; then
-		clone_patch=$(grep -m1 "^Name: Clone$" <<<"$list_patches" || grep -m1 "^Name: Change package name$" <<<"$list_patches") || :
-		clone_patch=${clone_patch#*: }
+		# Each bundle names its rename patch differently: 'Clone' (Piko), 'Clone app' (Morphe),
+		# 'Change package name' (Chiggi, Rushi). All three take the option key packageName. The name
+		# is an exact match, because a bundle can also ship an unrelated patch that merely mentions
+		# one of these words.
+		local cp
+		for cp in "Clone" "Clone app" "Change package name"; do
+			if grep -qxF "Name: $cp" <<<"$list_patches"; then
+				clone_patch="$cp"
+				break
+			fi
+		done
 		if [ -z "$clone_patch" ]; then
-			epr "clone=true but no 'Clone'/'Change package name' patch found for $pkg_name; skipping clone"
+			epr "clone=true but no 'Clone'/'Clone app'/'Change package name' patch found for $pkg_name; skipping clone"
 		else
 			local brand_pkg=${args[rv_brand],,} && brand_pkg=${brand_pkg//[^a-z0-9]/}
 			clone_pkg="app.${brand_pkg}.${pkg_name#com.}"
