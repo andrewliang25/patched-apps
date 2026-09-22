@@ -5,7 +5,7 @@ CWD=$(pwd)
 TEMP_DIR="temp"
 BIN_DIR="bin"
 BUILD_DIR="build"
-DL_SRCS=("direct" "archive" "apkmirror" "uptodown")
+DL_SRCS=("direct" "archive" "apkmirror")
 # For each app, the patch-bundle asset that the last successful build used. The file lives on
 # the 'update' branch. config_update reads it, and build.yml adds to it.
 PATCHES_STATE_FILE="patches-state.json"
