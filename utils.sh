@@ -1163,6 +1163,11 @@ build_rv() {
 		fi
 	fi
 
+	# patcher-args joins the shared args here, before the microg and branding checks below: both ask
+	# whether config already names the patch they are about to toggle, and patcher-args is one of the
+	# places config can name it.
+	if [ "${args[patcher_args]}" ]; then p_patcher_args+=("${args[patcher_args]}"); fi
+
 	# Every GmsCore/MicroG patch of the bundle, because a bundle can ship more than one (LINE has
 	# two). A scalar would hold them newline-joined, which matches no patch name, and the CLI drops
 	# an unknown -e/-d silently: the module would then keep the patches this is meant to remove.
@@ -1182,10 +1187,19 @@ build_rv() {
 	# The module keeps the original package, because the rename patch is off in module mode.
 	local clone_patch="" clone_pkg=""
 	if [ "${args[clone]}" = true ]; then
-		clone_patch=$(grep -m1 "^Name: Clone$" <<<"$list_patches" || grep -m1 "^Name: Change package name$" <<<"$list_patches") || :
-		clone_patch=${clone_patch#*: }
+		# Each bundle names its rename patch differently: 'Clone' (Piko), 'Clone app' (Morphe),
+		# 'Change package name' (Chiggi, Rushi). All three take the option key packageName. The name
+		# is an exact match, because a bundle can also ship an unrelated patch that merely mentions
+		# one of these words.
+		local cp
+		for cp in "Clone" "Clone app" "Change package name"; do
+			if grep -qxF "Name: $cp" <<<"$list_patches"; then
+				clone_patch="$cp"
+				break
+			fi
+		done
 		if [ -z "$clone_patch" ]; then
-			epr "clone=true but no 'Clone'/'Change package name' patch found for $pkg_name; skipping clone"
+			epr "clone=true but no 'Clone'/'Clone app'/'Change package name' patch found for $pkg_name; skipping clone"
 		else
 			local brand_pkg=${args[rv_brand],,} && brand_pkg=${brand_pkg//[^a-z0-9]/}
 			clone_pkg="app.${brand_pkg}.${pkg_name#com.}"
@@ -1213,7 +1227,6 @@ build_rv() {
 	local patcher_args patched_apk build_mode
 	local rv_brand_f=${args[rv_brand],,}
 	rv_brand_f=${rv_brand_f//[^a-z0-9]/-} # slug for filenames: a space, '+' or other character becomes '-'
-	if [ "${args[patcher_args]}" ]; then p_patcher_args+=("${args[patcher_args]}"); fi
 	for build_mode in "${build_mode_arr[@]}"; do
 		patcher_args=("${p_patcher_args[@]}")
 		pr "Building '${table}' in '$build_mode' mode"
