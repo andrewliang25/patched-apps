@@ -227,7 +227,7 @@ get_prebuilts() {
 			if [ "$REMOVE_RV_INTEGRATIONS_CHECKS" = true ]; then
 				local extensions_ext
 				extensions_ext=$(unzip -l "${file}" "extensions/shared.*" | grep -o "shared\..*") extensions_ext="${extensions_ext#*.}"
-				if ! (
+				(
 					mkdir -p "${file}-zip" || return 1
 					unzip -qo "${file}" -d "${file}-zip" || return 1
 					java -cp "${BIN_DIR}/paccer.jar:${BIN_DIR}/dexlib2.jar" com.jhc.Main "${file}-zip/extensions/shared.${extensions_ext}" "${file}-zip/extensions/shared-patched.${extensions_ext}" || return 1
@@ -235,9 +235,7 @@ get_prebuilts() {
 					rm "${file}" || return 1
 					cd "${file}-zip" || abort
 					zip -0rq "${CWD}/${file}" . || return 1
-				) >&2; then
-					echo >&2 "Patching integrations checks failed"
-				fi
+				) >&2
 				rm -r "${file}-zip" || :
 			fi
 		fi
@@ -970,9 +968,11 @@ patch_apk() {
 	# TODO: remove this later
 	local cli_name
 	cli_name=$(basename "$cli_jar")
-	if [ "${cli_name::8}" = revanced ]; then cmd+=" -b"; fi
+	if [ "${cli_name::8}" = "revanced" ]; then
+		cmd+=" -b"
+		if [ "$OS" = "Android" ]; then cmd+=" --custom-aapt2-binary='${AAPT2}'"; fi
+	fi
 
-	# if [ "$OS" = Android ]; then cmd+=" --custom-aapt2-binary='${AAPT2}'"; fi
 	pr "$cmd"
 	if eval "$cmd"; then [ -f "$patched_apk" ]; else
 		rm "$patched_apk" 2>/dev/null || :
@@ -1269,7 +1269,11 @@ build_rv() {
 						dlurl=$(jq -e -r '.assets[0] | .browser_download_url' <<<"$resp") || return 1
 						gh_dl $p "$dlurl" >/dev/null || return 1
 					fi
-					patcher_args+=("-p $p")
+					patcher_args+=("-p '$p'")
+
+					local v
+					v=$(git tag --sort=committerdate | tail -1) || :
+					if [ -n "$v" ]; then patcher_args+=("-e 'Current Build Tag' -OcurrentTag='\"$v\"'"); fi
 				else
 					wpr "enable-update-checks is only implemented for j-hc/revanced-magisk-module"
 				fi
