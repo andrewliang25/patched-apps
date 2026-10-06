@@ -27,12 +27,19 @@
     "andrewliang25/morphe-patches": "patches-3.4.0.mpp"
   },
   "Music-Morphe": {
-    "MorpheApp/morphe-patches": "patches-1.45.0.mpp"
+    "MorpheApp/morphe-patches": "patches-1.46.0.mpp",
+    "_pending": [
+      {
+        "version": "9.20.53",
+        "arch": "arm64-v8a",
+        "built": "9.15.51"
+      }
+    ]
   },
   "Reddit-Morphe": {
-    "MorpheApp/morphe-patches": "patches-1.45.0.mpp"
+    "MorpheApp/morphe-patches": "patches-1.46.0.mpp"
   },
   "YouTube-Morphe": {
-    "MorpheApp/morphe-patches": "patches-1.45.0.mpp"
+    "MorpheApp/morphe-patches": "patches-1.46.0.mpp"
   }
 }
