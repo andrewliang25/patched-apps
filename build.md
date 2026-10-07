@@ -1,6 +1,4 @@
-Music-Morphe: 9.15.51  
-Reddit-Morphe: 2026.24.0  
-YouTube-Morphe: 21.16.256  
+Music-Morphe: 9.20.53  
 
 Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs  
 Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach patched apps from Play Store  
