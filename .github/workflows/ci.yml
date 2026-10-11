@@ -86,6 +86,8 @@ jobs:
             MSG="❌ *Daily CI check failed* ([run]($RUN_URL))"
           elif [ "$SB" != "1" ]; then
             MSG="✅ *Daily check* — no new patches, build skipped. ([run]($RUN_URL))"
+          elif [ "$BUILD" = "success" ] && [ "${{ needs.build.outputs.released }}" != "true" ]; then
+            MSG="⚠️ *Daily build* — nothing released; every app was skipped (see warnings). ([run]($RUN_URL))"
           elif [ "$BUILD" = "success" ]; then
             MSG="✅ *Daily build succeeded* — release posted to the channel. ([run]($RUN_URL))"
           elif [ "$BUILD" = "failure" ]; then
