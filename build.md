@@ -1,4 +1,4 @@
-Twitter/X-Piko: 12.19.1-release.0  
+Instagram-Piko: 447.0.0.55.81  
 
 Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs  
 Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach patched apps from Play Store  
