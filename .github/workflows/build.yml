@@ -11,6 +11,10 @@ on:
         type: string
         required: false
         default: ""
+    outputs:
+      released:
+        description: "'true' when this run published a release, 'false' when every app was skipped."
+        value: ${{ jobs.run.outputs.released }}
 
   workflow_dispatch:
 
@@ -18,6 +22,8 @@ jobs:
   run:
     permissions: write-all
     runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.built.outputs.any }}
     steps:
       - uses: actions/setup-java@v5
         with:
@@ -85,6 +91,24 @@ jobs:
           GITHUB_REPOSITORY: $GITHUB_REPOSITORY
           NEXT_VER_CODE: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
 
+      - name: Check for artifacts
+        id: built
+        run: |
+          # build.sh succeeds with an empty build/ when every selected app was skipped, for example
+          # an 'auto' app whose latest supported version no source serves yet. Publish nothing then.
+          if ls build/* >/dev/null 2>&1; then echo "any=true"; else echo "any=false"; fi >>"$GITHUB_OUTPUT"
+
+      - name: Release unused tag
+        if: ${{ steps.built.outputs.any == 'false' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
+        run: |
+          # The tag was claimed before the build. It never became a release, so it is not burned:
+          # delete it, and the next run claims the same number.
+          gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" ||
+            echo "::warning::Could not delete the unused tag $TAG. The next run steps over it."
+
       - name: Report per-app build failures
         if: ${{ always() }}
         env:
@@ -112,7 +136,7 @@ jobs:
         run: |
           [ -s build-warnings.txt ] || exit 0
           {
-            echo "### ⚠️ Apps built with warnings"
+            echo "### ⚠️ Apps with warnings"
             echo ""
             echo "| App | Warning |"
             echo "| --- | --- |"
@@ -120,15 +144,17 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           LIST=$(while IFS=$'\t' read -r t r; do echo "• ${t} — ${r}"; done <build-warnings.txt)
-          bash "$RUNNER_TEMP/tg-notify.sh" "⚠️ *Some apps built with a warning* ([run]($RUN_URL))
+          bash "$RUNNER_TEMP/tg-notify.sh" "⚠️ *Some apps have a warning* ([run]($RUN_URL))
           ${LIST}"
 
       - name: Attest build provenance
+        if: ${{ steps.built.outputs.any == 'true' }}
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: "build/*"
 
       - name: Get output
+        if: ${{ steps.built.outputs.any == 'true' }}
         id: get_output
         run: |
           DELIM="$(openssl rand -hex 8)"
@@ -138,6 +164,7 @@ jobs:
           cp -f build.md build.tmp
       
       - name: Upload release
+        if: ${{ steps.built.outputs.any == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.next_ver_code.outputs.NEXT_VER_CODE }}
@@ -154,6 +181,7 @@ jobs:
           fi
 
       - name: Update modules changelog and update json
+        if: ${{ steps.built.outputs.any == 'true' }}
         id: update_config
         run: |
           # Collect the *-update.json files that the module tables own, while config.toml and
@@ -210,6 +238,7 @@ jobs:
           find . -name "*-update.json" | grep . || : >dummy-update.json
 
       - name: Commit module json changes
+        if: ${{ steps.built.outputs.any == 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -227,7 +256,7 @@ jobs:
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT: ${{ vars.TG_CHAT }}
-        if: ${{ env.TG_TOKEN != '' && env.TG_CHAT != '' }}
+        if: ${{ steps.built.outputs.any == 'true' && env.TG_TOKEN != '' && env.TG_CHAT != '' }}
         run: |
           cd build || { echo "build folder not found"; exit 1; }
 

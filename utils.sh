@@ -16,9 +16,9 @@ BUILT_PATCHES_FILE="patches-built.json"
 # app does not fail the job, because the other apps still ship. Without this file the failure is
 # invisible.
 FAILED_BUILDS_FILE="failed-builds.txt"
-# The apps in this run that shipped with a warning, one "<table>\t<message>" line each. One
-# example is an 'auto' build that stepped down below the latest supported version, because that
-# version was not downloadable. build.yml sends these to the admin chat and the job summary.
+# The apps in this run that have a warning, one "<table>\t<message>" line each. One example is
+# an 'auto' build that was skipped, because no source could serve its latest supported version.
+# build.yml sends these to the admin chat and the job summary.
 BUILD_WARNINGS_FILE="build-warnings.txt"
 
 if [ "${GITHUB_TOKEN-}" ]; then GH_HEADER="Authorization: token ${GITHUB_TOKEN}"; else GH_HEADER=; fi
@@ -43,13 +43,11 @@ update_json_name() { local s=${1,,}; echo "${s//\//-}-update.json"; }
 # ^[a-zA-Z][a-zA-Z0-9._-]+$ and refuses the zip if the id does not match.
 module_id_name() { local s=${1,,}; echo "${s//[!a-z0-9._-]/-}"; }
 # The form of a version that a downloaded filename uses: no spaces, no leading 'v'. This is the
-# same value as build_rv's $version_f. dl_archive and dl_direct once read that variable from the
-# scope of their caller. They now derive it from their own argument with this function. The
-# availability probe can thus call the same matching code, and does not have to fake a caller.
+# same value as build_rv's $version_f. dl_archive and dl_direct derive it from their own argument
+# with this function, and do not read that variable from the scope of their caller.
 version_key() { local v=${1// /}; echo "${v#v}"; }
 # Normalize a configured *-dlurl: remove a trailing '/', then a trailing 'download', then a
-# trailing '/' again. The app loop in build.sh and the availability probe both call this. A url
-# is thus the same whether the build downloads from it or the probe only asks about it.
+# trailing '/' again. The app loop in build.sh calls this.
 norm_dlurl() { local u=${1%/}; u=${u%download}; echo "${u%/}"; }
 toml_get() {
 	local op quote_placeholder=$'\001'
@@ -328,60 +326,9 @@ _patches_src_changed() {
 	[ "$LATEST_NAME" != "$recorded" ]
 }
 
-# Return 0 when two things are true: the last build of this app stepped down, and some source can
-# serve the version it missed now. A step-down means the build shipped below the top supported
-# version, because no source could serve that version.
-#
-# Only then does the app need a rebuild. The build succeeded, so its bundle asset is recorded and
-# _patches_src_changed reports no change. Without this test the app stays on the lower version
-# until the bundle next bumps. $1 is the config table of the app and $2 is its name.
-#
-# Anything that the probe cannot prove counts as "not obtainable". This is the same rule as an
-# unresolvable patches source: a temporary network error must never start a build.
-#
-# This function must not write to stdout. The stdout of config_update is the config that ci.yml
-# captures and build.yml writes verbatim to config.json. One stray line thus breaks the build job.
-# pr() writes to stdout, but epr and wpr write to stderr. Use epr or wpr. The stdout of the probe
-# is redirected below for the same reason. Do not call this function or dl_available inside
-# $(...): a subshell discards the http response cache that lives in the scope of config_update.
-_pending_now_obtainable() {
-	local t=$1 table=$2 vmode dpi pend ver arch src u
-	# A pinned version, and 'latest', resolve one candidate only, and thus can never step down. A
-	# record from a time when the app was 'auto' is stale. Skip it. It clears on the next build.
-	vmode=$(toml_get "$t" version) || vmode="auto"
-	isoneof "$vmode" auto experimental || return 1
-	pend=$(jq -r --arg t "$table" '.[$t]._pending // [] | .[] | [.version, .arch] | @tsv' \
-		"$PATCHES_STATE_FILE" 2>/dev/null) || return 1
-	[ -n "$pend" ] || return 1
-
-	declare -A dl=()
-	for src in "${DL_SRCS[@]}"; do
-		if u=$(toml_get "$t" "${src}-dlurl"); then dl[${src}_dlurl]=$(norm_dlurl "$u"); else dl[${src}_dlurl]=""; fi
-	done
-	# dpi is read live, not recorded. build_rv gives it to the download source unchanged, so the
-	# current config is always the right answer and nothing can go stale. arch is recorded, because
-	# it needs the arch="both" fan-out that build.sh does. To derive that again here makes a third
-	# copy of it.
-	dl[dpi]=$(toml_get "$t" dpi) || dl[dpi]=""
-
-	while IFS=$'\t' read -r ver arch; do
-		# Both fields must be present. A record with an empty arch probes for "<version>-", which
-		# matches any variant. That can schedule a rebuild for a file that no source can serve. An
-		# empty arch comes from hand-edited state on the 'update' branch, or from a format change.
-		[ -n "$ver" ] && [ -n "$arch" ] || continue
-		if dl_available "$(declare -p dl)" "$ver" "$arch" >/dev/null; then
-			wpr "'${table}': missed version ${ver} (${arch}) is downloadable from '${DL_AVAILABLE_SRC}' now; rebuilding"
-			return 0
-		fi
-	done <<<"$pend"
-	return 1
-}
-
 config_update() {
 	[ -f "$PATCHES_STATE_FILE" ] || echo '{}' >"$PATCHES_STATE_FILE"
-	# archive_resp_cache belongs here, not to the probe, so that one folder listing answers for
-	# every app that mirrors on it. _archive_resp_cached fills it.
-	declare -A latest_cache archive_resp_cache
+	declare -A latest_cache
 	local LATEST_NAME="" upped=()
 	for table_name in $(toml_get_table_names); do
 		if [ -z "$table_name" ]; then continue; fi
@@ -396,11 +343,6 @@ config_update() {
 			EXTRA_VER=$(toml_get "$t" extra-patches-version) || EXTRA_VER="latest"
 			if _patches_src_changed "$EXTRA_SRC" "$EXTRA_VER" "$table_name"; then up=true; fi
 		fi
-		# An app whose last 'auto' build stepped down is otherwise stuck on the lower version. It
-		# built successfully, so its bundle asset is recorded and the two source checks report no
-		# change. Probe only when nothing else selected the app already. The ordinary bundle-bump
-		# path thus makes no network calls.
-		if [ "$up" = false ] && _pending_now_obtainable "$t" "$table_name"; then up=true; fi
 		if [ "$up" = true ]; then upped+=("$table_name"); fi
 	done
 	if [ ${#upped[@]} -ne 0 ]; then
@@ -449,14 +391,6 @@ log() { echo -e "$1  " >>"build.md"; }
 # file into PATCHES_STATE_FILE. This function runs on success only. Thus a failed build stays
 # unrecorded, and the next run tries it again.
 log_built_patches() { printf '%s\t%s\t%s\n' "$1" "$2" "$(basename "$3")" >>"${TEMP_DIR}/built-patches.tsv"; }
-# Append one "<app>\t<version>\t<arch>\t<built>" line for each 'auto' build that shipped below its
-# top supported version, because no source could serve that version. build.sh folds these rows
-# into BUILT_PATCHES_FILE, under the reserved "_pending" key of the same app. build.yml then
-# merges that file into PATCHES_STATE_FILE. The next check job probes whether the recorded
-# version can be downloaded now, and rebuilds the app only then. See _pending_now_obtainable.
-# Like log_built_patches, this runs on success only. The rows live in their own file, not in
-# built-patches.tsv, which keeps them out of the changelog loop that reads column 2 of that file.
-record_pending_version() { printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >>"${TEMP_DIR}/pending-versions.tsv"; }
 # The path of the changelog part for one patches source. The part holds the "Patches:" and
 # "[Changelog]" lines. The key is the full source string ($1), for example "crimera/piko" or
 # "gitlab:inotia00/x-shim", so that it matches column 2 of built-patches.tsv. get_prebuilts writes
@@ -469,7 +403,7 @@ cl_changelog_file() { local k=${1//\//_}; k=${k//:/_}; echo "${TEMP_DIR}/changel
 # line, which keeps the append atomic.
 record_failure() { printf '%s\t%s\n' "$1" "${2:-build failed}" >>"$FAILED_BUILDS_FILE"; }
 # Record a build warning, with its table name and a message, for build.sh and build.yml to
-# report. It appends one line, like record_failure. It is used for 'auto' version step-downs.
+# report. It appends one line, like record_failure. It is used for skipped 'auto' builds.
 record_warning() { printf '%s\t%s\n' "$1" "${2:-}" >>"$BUILD_WARNINGS_FILE"; }
 get_highest_ver() {
 	local vers m
@@ -529,12 +463,9 @@ _supported_vers_for_jar() {
 }
 # Echo the versions that the primary bundle and every extra-patches bundle support together,
 # highest first, one per line. The output is empty when no bundle sets a version limit. The exit
-# code is not zero when list-patches fails hard. In 'auto' mode the caller takes line 1. If no
-# source can download that version, the caller walks down the rest of the list. Thus a version
-# that a bundle declares but nobody hosts falls back to the highest version that is available.
-# One past example: Paresh listed Telegram-web 12.9.1, for which no web APK existed. The name of
-# this function is unchanged, to keep upstream merges simple, but it now returns the whole ranked
-# list, not the last version only.
+# code is not zero when list-patches fails hard. In 'auto' mode the caller takes line 1 only. If
+# no source can download that version, the caller skips the app; it never falls back to a lower
+# version. The whole ranked list is still built, because the extra-bundle intersection needs it.
 get_patch_last_supported_ver() {
 	local list_patches=$1 pkg_name=$2 inc_sel=$3 is_experimental=$4
 	local op
@@ -560,9 +491,8 @@ get_patch_last_supported_ver() {
 	fi
 	# The versions that the primary bundle and every extra-patches bundle support, highest first.
 	# An extra bundle with no version limit gives an empty list, for example the x-shim shim, and
-	# it does not make the set smaller. Patches are compatible downward, so a step down this list
-	# is safe for every bundle applied together. is_experimental is passed on, so 'experimental'
-	# mode also resolves the version against the experimental patches (CLI -x).
+	# it does not make the set smaller. is_experimental is passed on, so 'experimental' mode also
+	# resolves the version against the experimental patches (CLI -x).
 	local vers ej ejv
 	vers=$(_supported_vers_for_jar "$patches_jar" false "$is_experimental") || return 1
 	for ej in ${args[ptjar_extra]:-}; do
@@ -735,12 +665,6 @@ get_apkmirror_vers() {
 	echo "${r_vers[*]}"
 }
 get_apkmirror_pkg_name() { sed -n 's;.*id=\(.*\)" class="accent_color.*;\1;p' <<<"$__APKMIRROR_RESP__"; }
-# No cheap exact test exists. dl_apkmirror needs a release-page request, then apkmirror_search
-# over up to 40 htmlq rows, then two more requests. apkmirror also answers 403 to CI runners.
-# get_apkmirror_vers reads only the recent-uploads page. That page is a partial list of
-# free-form version strings with no arch and no dpi. It can neither prove nor disprove one
-# variant. "Unknown" counts as "not available", so this function never starts a build by mistake.
-apkmirror_available() { return 1; }
 get_apkmirror_resp() {
 	__APKMIRROR_RESP__=$(req "${1}" -) || return 1
 	__APKMIRROR_CAT__="${1##*/}"
@@ -808,23 +732,15 @@ dl_uptodown() {
 	fi
 }
 get_uptodown_pkg_name() { $HTMLQ --text "tr.full:nth-child(1) > td:nth-child(3)" <<<"$__UPTODOWN_RESP_PKG__"; }
-# No cheap exact test yet. dl_uptodown already works like a probe: it walks
-# /apps/<code>/versions/<i> for i in 1..20. But that costs 2 requests for get_uptodown_resp, plus
-# up to 20 more, and the paged json carries no arch. A bounded form (i in 1..3, version only) is
-# the natural extension if this gap ever matters. Until then "unknown" counts as "not available".
-uptodown_available() { return 1; }
 
 # -------------------- archive --------------------
 # The listing line that dl_archive downloads for version $1 and arch $2, or 1 when there is none.
 # Call get_archive_resp first, because it sets __ARCHIVE_RESP__. The rule is the filename rule of
-# the mirror: <pkg>-<version>-<arch>.apk[m], and an '-all' file serves every arch. dl_archive and
-# archive_available both call this function, so the answer of the probe and the decision of the
-# download cannot drift.
+# the mirror: <pkg>-<version>-<arch>.apk[m], and an '-all' file serves every arch.
 #
 # The match is fixed-string and keeps the '-' that ends the package name, because the version is
 # interpolated. Without -F, the dots of the version are wildcards. Without the leading '-', a
-# mirrored '11.2.3' also matches a wanted '1.2.3'. This was a smaller problem when the match only
-# chose which file to download. The same answer now decides whether a daily build runs at all.
+# mirrored '11.2.3' also matches a wanted '1.2.3'.
 archive_match_path() {
 	local version arch=${2// /}
 	version=$(version_key "$1")
@@ -858,50 +774,10 @@ get_archive_resp() {
 }
 get_archive_vers() { sed 's/^[^-]*-//;s/-\(all\|arm64-v8a\|arm-v7a\)\.\(apk\|apkm\)//g' <<<"$__ARCHIVE_RESP__"; }
 get_archive_pkg_name() { echo "$__ARCHIVE_PKG_NAME__"; }
-# get_archive_resp makes one request for the folder listing. dl_archive then decides from that
-# listing alone, so the listing is an exact oracle: no download and no second request. The cache
-# archive_resp_cache holds the listing per url and belongs to the caller. An arch="both" app thus
-# costs one request and not two, and a folder that answered once is never asked again. This is
-# true for a negative answer too.
-#
-# There is no "the host is down, stop asking" short-circuit, and that is deliberate. To separate
-# a dead host from a 404 on the folder of one app, or from a rate-limited 503, needs the exit
-# code of curl. get_archive_resp reads its body through $(...), and the subshell loses that code.
-# A latch that cannot make this separation lets one missing folder silence the probe for every
-# app checked after it. They all live on the same host. That is a wrong answer. The cost
-# of the trade is bounded: at worst one connect timeout for each stepped-down app, on a day when
-# archive.org is already unreachable.
-#
-# Do not call this function inside $(...). The subshell loses the cache.
-_archive_resp_cached() {
-	local url=$1
-	# config_update declares the cache, so that one listing answers for every app on that host. A
-	# caller that did not declare it is still safe. Without this line, the assignment that follows
-	# treats "$url" as an arithmetic subscript of a new indexed array, and fails.
-	declare -p archive_resp_cache >/dev/null 2>&1 || declare -gA archive_resp_cache
-	if [ "${archive_resp_cache[$url]+set}" ]; then
-		__ARCHIVE_RESP__=${archive_resp_cache[$url]}
-		[ -n "$__ARCHIVE_RESP__" ]
-		return
-	fi
-	# A miss is an ordinary answer here. Keep the error line of _req out of the log of a green
-	# check job.
-	if get_archive_resp "$url" 2>/dev/null; then
-		archive_resp_cache["$url"]=$__ARCHIVE_RESP__
-		return 0
-	fi
-	archive_resp_cache["$url"]="" __ARCHIVE_RESP__=""
-	return 1
-}
-archive_available() {
-	_archive_resp_cached "$1" || return 1
-	archive_match_path "$2" "$3" >/dev/null
-}
 
 # -------------------- direct --------------------
 # Whether the configured direct url $1 names version $2 at arch $3. This is the only test that
-# dl_direct does. It is split out, so that direct_available can ask it without a download. It is
-# fixed-string and '-'-bounded, for the reason given on archive_match_path.
+# dl_direct does. It is fixed-string and '-'-bounded, for the reason given on archive_match_path.
 direct_url_matches() { local v; v=$(version_key "$2"); grep -qF -- "-${v}-${3// /}" <<<"$1"; }
 dl_direct() {
 	local url=$1 output=$3 arch=$4 _dpi=$5
@@ -919,40 +795,7 @@ dl_direct() {
 get_direct_vers() { cut -d- -f2 <<<"$__DIRECT_APKNAME__"; }
 get_direct_pkg_name() { cut -d- -f1 <<<"$__DIRECT_APKNAME__"; }
 get_direct_resp() { __DIRECT_APKNAME__=$(awk -F/ '{print $NF}' <<<"$1"); }
-# The only gate in dl_direct is the version and the arch inside the configured url. But that test
-# alone cannot answer the question. A string test can never falsify itself, unlike the archive
-# listing. Thus a rotted link that still names the wanted version schedules a rebuild every day,
-# for ever. A HEAD settles it for one cheap request. A host that refuses HEAD answers "not
-# available", which is the safe way to be wrong.
-direct_available() {
-	direct_url_matches "$1" "$2" "$3" || return 1
-	curl -sIL --fail --connect-timeout 10 --max-time 20 -o /dev/null "$1"
-}
 # --------------------------------------------------
-
-# Return 0 when some configured source can serve this exact apk now. This function downloads
-# nothing. $1 is a `declare -p` string of an associative array that holds the <src>_dlurl keys of
-# build_rv, plus [dpi]. $2 is the version. $3 is one concrete arch: the caller expands
-# arch="both", because build.sh divides it into two builds that look for two different files.
-#
-# This function tries the sources in DL_SRCS order, the same order that the real download loop
-# uses, and the first proof wins. A source that errors, or that cannot answer, counts as "not
-# available", so a network problem never starts a build. Do not call this function inside
-# $(...): archive_available caches its http response in the scope of the caller, and a subshell
-# discards it.
-dl_available() {
-	eval "declare -A dl=${1#*=}"
-	local version=$2 arch=$3 src
-	DL_AVAILABLE_SRC=""
-	for src in "${DL_SRCS[@]}"; do
-		if [ -z "${dl[${src}_dlurl]-}" ]; then continue; fi
-		if "${src}_available" "${dl[${src}_dlurl]}" "$version" "$arch" "${dl[dpi]-}"; then
-			DL_AVAILABLE_SRC=$src
-			return 0
-		fi
-	done
-	return 1
-}
 
 patch_apk() {
 	local stock_input=$1 patched_apk=$2 patcher_args=$3 cli_jar=$4 patches_jar=$5 extra_patches=${6:-}
@@ -1002,10 +845,6 @@ build_rv() {
 	local arch=${args[arch]}
 	local arch_f="${arch// /}"
 	local built_ok=false # true after any (mode, arch) build of this app succeeds
-	# The top supported version that no source could serve. 'auto' sets it when it steps down below
-	# that version. build_rv writes it to the patches state at the end, beside the built bundle
-	# names, and never earlier.
-	local pending_ver=""
 
 	local p_patcher_args=()
 	if [ "${args[excluded_patches]}" ]; then p_patcher_args+=("$(join_args "${args[excluded_patches]}" -d)"); fi
@@ -1041,7 +880,6 @@ build_rv() {
 	if [ "$version_mode" = "experimental" ]; then is_experimental="true"; fi
 	list_patches=$(patches_list "$cli_jar" "$patches_jar" "$pkg_name" "$is_experimental") || return 1
 	local get_latest_ver=false
-	local -a version_candidates=()
 	if isoneof "$version_mode" auto experimental; then
 		local supported_vers
 		if ! supported_vers=$(get_patch_last_supported_ver "$list_patches" "$pkg_name" \
@@ -1052,11 +890,9 @@ build_rv() {
 		if [ -z "$supported_vers" ]; then
 			get_latest_ver=true
 		else
-			# Line 1 is the pick. The other lines are fallbacks. The code below tries them in
-			# order if no source can download the pick. This occurs when a bundle declares a
-			# version that nobody hosts.
-			mapfile -t version_candidates <<<"$supported_vers"
-			version=${version_candidates[0]}
+			# Line 1 is the top supported version. Only that version is built. A lower one is
+			# never a fallback: if no source serves the top one, the app is skipped below.
+			version=$(head -1 <<<"$supported_vers")
 		fi
 	elif [ "$version_mode" = latest ]; then
 		get_latest_ver=true
@@ -1084,8 +920,6 @@ build_rv() {
 		record_failure "$table" "could not resolve version"
 		return 0
 	fi
-	# Modes other than 'auto', and the get_latest_ver path, resolve one version only, with no step-down.
-	if [ ${#version_candidates[@]} -eq 0 ]; then version_candidates=("$version"); fi
 
 	if [ "$mode_arg" = module ]; then
 		build_mode_arr=(module)
@@ -1095,16 +929,11 @@ build_rv() {
 		build_mode_arr=(apk module)
 	fi
 
-	# Try each candidate version, highest first. The inner loop already tries every configured
-	# source, so the code steps down to the next version only after every source fails.
-	local version_f stock_apk cand dled=false
-	for cand in "${version_candidates[@]}"; do
-		version=$cand
-		pr "Choosing version '${version}' for ${table}"
-		version_f=${version// /}
-		version_f=${version_f#v}
-		stock_apk="${TEMP_DIR}/${pkg_name}-${version_f}-${arch_f}.apk"
-		if [ -f "$stock_apk" ]; then dled=true; break; fi
+	pr "Choosing version '${version}' for ${table}"
+	local version_f=${version// /}
+	version_f=${version_f#v}
+	local stock_apk="${TEMP_DIR}/${pkg_name}-${version_f}-${arch_f}.apk" dled=false
+	if [ -f "$stock_apk" ]; then dled=true; else
 		for dl_p in "${DL_SRCS[@]}"; do
 			if [ -z "${args[${dl_p}_dlurl]}" ]; then continue; fi
 			pr "Downloading '${table}' from '${dl_p}'"
@@ -1122,25 +951,19 @@ build_rv() {
 			dled=true
 			break
 		done
-		if [ "$dled" = true ]; then break; fi
-		if [ ${#version_candidates[@]} -gt 1 ]; then
-			wpr "'${table}' version '${version}' not downloadable from any source; trying next supported version"
-		fi
-	done
-	if [ "$dled" != true ]; then
-		epr "Stock apk not found for ${table} (tried: ${version_candidates[*]})"
-		record_failure "$table" "stock apk download failed (${version_candidates[*]})"
-		return 0
 	fi
-	# 'auto' stepped down. It shipped a supported version below the latest one, because the latest
-	# one was not downloadable. The app still builds, so this is a warning, not a failure. build_rv
-	# remembers the missed version. The next check job can thus probe for it, and does not have to
-	# wait for the next patch-bundle change. Only 'auto' and 'experimental' get here: every other
-	# mode resolves one candidate, which makes the test that follows always false for them.
-	if [ "$version" != "${version_candidates[0]}" ]; then
-		pending_ver=${version_candidates[0]}
-		wpr "'${table}' built '${version}', not latest supported '${version_candidates[0]}' (not downloadable)"
-		record_warning "$table" "built ${version} — latest supported ${version_candidates[0]} not downloadable (recorded; retried once downloadable)"
+	if [ "$dled" != true ]; then
+		# 'auto' builds the top supported version or nothing. It never ships an older version.
+		# The skip is a warning, not a failure. Nothing is recorded in the patches state, so
+		# the next run selects the app again and retries, until a source serves the version.
+		if isoneof "$version_mode" auto experimental && [ "$get_latest_ver" = false ]; then
+			wpr "Skipping '${table}': latest supported version '${version}' not downloadable from any source"
+			record_warning "$table" "skipped — latest supported ${version} not downloadable (retried next run)"
+		else
+			epr "Stock apk not found for ${table} (${version})"
+			record_failure "$table" "stock apk download failed (${version})"
+		fi
+		return 0
 	fi
 
 	local sig_op
@@ -1387,13 +1210,6 @@ build_rv() {
 		log_built_patches "${args[table_base]}" "${args[patches_src]}" "${args[ptjar]}"
 		if [ -n "${args[ptjar_extra]:-}" ]; then
 			log_built_patches "${args[table_base]}" "${args[extra_patches_src]}" "${args[ptjar_extra]}"
-		fi
-		# 'auto' shipped below its top supported version. Record that version here, with the built
-		# bundle names and under the same rule. A build that downloaded the apk but then failed to
-		# patch it thus never writes a pending record with no built record beside it. build.yml merges
-		# the per-app object whole, so such a record wipes the recorded bundle names of the app.
-		if [ -n "$pending_ver" ]; then
-			record_pending_version "${args[table_base]}" "$pending_ver" "$arch" "$version"
 		fi
 	else
 		# The build loop ran, but it made no artifact. A patch step or a packaging step broke out.

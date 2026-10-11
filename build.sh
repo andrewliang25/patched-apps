@@ -65,7 +65,7 @@ if [ "${2-}" = "--list-update-jsons" ]; then
 fi
 
 : >build.md
-rm -f "$BUILT_PATCHES_FILE" "$TEMP_DIR"/built-patches.tsv "$TEMP_DIR"/pending-versions.tsv # left over from a previous run
+rm -f "$BUILT_PATCHES_FILE" "$TEMP_DIR"/built-patches.tsv # left over from a previous run
 ENABLE_MODULE_UPDATE=$(toml_get "$main_config_t" enable-module-update) || ENABLE_MODULE_UPDATE=true
 if [ "$ENABLE_MODULE_UPDATE" = true ] && [ -z "${GITHUB_REPOSITORY-}" ]; then
 	pr "You are building locally. Module updates will not be enabled."
@@ -219,10 +219,17 @@ if [ -s "$FAILED_BUILDS_FILE" ]; then
 	while IFS=$'\t' read -r t r; do epr "  - ${t}: ${r}"; done <"$FAILED_BUILDS_FILE"
 fi
 if [ -s "$BUILD_WARNINGS_FILE" ]; then
-	wpr "$(($(wc -l <"$BUILD_WARNINGS_FILE"))) app(s) built with warnings:"
+	wpr "$(($(wc -l <"$BUILD_WARNINGS_FILE"))) app(s) have warnings:"
 	while IFS=$'\t' read -r t r; do wpr "  - ${t}: ${r}"; done <"$BUILD_WARNINGS_FILE"
 fi
-if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then abort "All builds failed."; fi
+if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then
+	# Nothing shipped. That is not a failure when every selected app was skipped with a warning,
+	# for example an 'auto' app whose latest supported version no source serves yet. build.yml
+	# then publishes nothing, and the next run retries the apps.
+	if [ -s "$FAILED_BUILDS_FILE" ] || [ ! -s "$BUILD_WARNINGS_FILE" ]; then abort "All builds failed."; fi
+	wpr "No app built: every selected app was skipped."
+	exit 0
+fi
 
 # Write the bundles built in this run to a JSON file: { "<app>": { "<src>": "<asset>" } }.
 # build.yml merges this file into PATCHES_STATE_FILE on the 'update' branch. Thus an app built
@@ -230,21 +237,6 @@ if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then abort "All builds failed."; fi
 if [ -f "$TEMP_DIR"/built-patches.tsv ]; then
 	jq -Rn 'reduce (inputs | split("\t")) as $r ({}; .[$r[0]][$r[1]] = $r[2])' \
 		"$TEMP_DIR"/built-patches.tsv >"$BUILT_PATCHES_FILE"
-	# An 'auto' build that shipped below its top supported version records that version under the
-	# reserved "_pending" key of the same app. The next check job then probes for it, and does not
-	# have to wait for the next bundle change. The key cannot clash with a patches source, because
-	# every source holds a '/'. Only an app that also has a built row gets the key. Thus the per-app
-	# merge in build.yml never replaces the whole state of an app with a pending record alone. An
-	# app that builds without a step-down writes no key, and that same merge clears it.
-	if [ -f "$TEMP_DIR"/pending-versions.tsv ]; then
-		jq -Rn 'reduce (inputs | split("\t")) as $r ({};
-				.[$r[0]] += [{version: $r[1], arch: $r[2], built: $r[3]}])' \
-			"$TEMP_DIR"/pending-versions.tsv >"$TEMP_DIR"/pending-versions.json
-		jq -s '.[1] as $p | .[0] | with_entries(
-				if $p[.key] then .value._pending = $p[.key] else . end)' \
-			"$BUILT_PATCHES_FILE" "$TEMP_DIR"/pending-versions.json >"$TEMP_DIR"/built-with-pending.json
-		mv -f "$TEMP_DIR"/built-with-pending.json "$BUILT_PATCHES_FILE"
-	fi
 fi
 
 log "\nInstall [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs"
@@ -257,8 +249,6 @@ log '```'
 # Emit changelog parts only for the patch sources that shipped. built-patches.tsv is written
 # on success only, so a failed build never advertises a patch update. Remove duplicate sources
 # from the source column, but keep the first-seen order. cli-changelog.md comes last.
-# This is why step-down records live in pending-versions.tsv and not in a fourth column here. The
-# loop that follows reads column 2 as a patches source, and must then remove a control row.
 cl_files=()
 if [ -f "$TEMP_DIR"/built-patches.tsv ]; then
 	while IFS= read -r built_src; do
