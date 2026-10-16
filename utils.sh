@@ -315,21 +315,122 @@ _latest_patches_name() {
 	latest_cache["$key"]=$name LATEST_NAME=$name
 }
 
+# Decide from the release notes if a bundle update changes one app, in the way that Morphe Manager
+# does (ChangelogParser.hasChangesFor). $1 is the source, $2 the patches-version, $3 the recorded
+# asset, $4 the latest asset, $5 the package, and $6 is true for an app with
+# version = "experimental". The notes are the releases after the recorded tag, up to and including
+# the latest tag. The app names and patch names come from the patches-list.json of the bundle at
+# the latest tag. Return 1 only when no bullet in the notes can concern the app. Return 0 in every
+# unclear case, and for every check that cannot run, so that an error never hides a real change.
+# As in Morphe, a bullet that only adds experimental support for an app version is not a change,
+# because 'auto' never selects an experimental target. An 'experimental' app counts it. The
+# results of the API calls are cached in rels_cache[] and plist_cache[], which belong to the
+# caller, as in _latest_patches_name.
+_bundle_affects_app() {
+	local src=$1 ver=$2 recorded=$3 latest=$4 pkg=$5 exp=${6:-false}
+	# Only the GitHub sources that follow a release channel can be checked. A pinned
+	# patches-version changes only when the config changes it.
+	if [ -z "$pkg" ] || [[ "$src" == gitlab:* ]] || { [ "$ver" != latest ] && [ "$ver" != dev ]; }; then return 0; fi
+	# The asset names are 'patches-<ver>.<ext>' (see _latest_patches_name). The tags can start
+	# with 'v' or not, so the jq program below removes it before it compares.
+	local old_ver=${recorded#patches-} new_ver=${latest#patches-}
+	old_ver=${old_ver%.*} new_ver=${new_ver%.*}
+	local rel_url="https://api.github.com/repos/${src}/releases?per_page=100"
+	if [[ ! -v rels_cache["$src"] ]]; then rels_cache["$src"]=$(gh_req "$rel_url" -) || rels_cache["$src"]=""; fi
+	local plist_key="$src/$new_ver"
+	if [[ ! -v plist_cache["$plist_key"] ]]; then
+		local tag
+		tag=$(jq -r --arg v "$new_ver" 'map(.tag_name | select(ltrimstr("v") == $v)) | first // empty' <<<"${rels_cache["$src"]}" 2>/dev/null)
+		if [ -n "$tag" ]; then
+			plist_cache["$plist_key"]=$(_req "https://api.github.com/repos/${src}/contents/patches-list.json?ref=${tag}" - \
+				-H "$GH_HEADER" -H "Accept: application/vnd.github.raw") || plist_cache["$plist_key"]=""
+		else plist_cache["$plist_key"]=""; fi
+	fi
+	local res
+	res=$(jq -n -r --arg old "$old_ver" --arg new "$new_ver" --arg pkg "$pkg" --argjson exp "$exp" \
+		--slurpfile rels <(printf '%s' "${rels_cache["$src"]}") --slurpfile pl <(printf '%s' "${plist_cache["$plist_key"]}") '
+		def compact: ascii_downcase | gsub("[^a-z0-9]"; "");
+		def segs: split(".") | map(select(length >= 3 and (ascii_downcase | IN("com", "org", "net", "app",
+			"apps", "android", "google", "mobile", "client", "free", "pro", "lite", "plus", "beta", "dev",
+			"release", "global", "official", "messenger", "music", "browser") | not)) | compact);
+		def exp_only: ($exp | not) and test("^Add(ed)?\\s+experimental\\s+support\\s+for\\b"; "i");
+		def rx_escape: gsub("(?<c>[.*+?^${}()|\\[\\]\\\\/])"; "\\\(.c)");
+		def word($n): test("(^|[^\\p{L}\\p{N}])" + ($n | rx_escape) + "($|[^\\p{L}\\p{N}])"; "i");
+		def any_in($set): any(.[]; . as $k | $set | index([$k]) != null);
+		($rels[0] // []) as $rels | ($pl[0] // null) as $pl
+		| ($rels | map(.tag_name | ltrimstr("v"))) as $tags
+		| ($tags | index($new)) as $i | ($tags | index($old)) as $j
+		| if $i == null or $j == null or $i >= $j or ($pl | type) != "object" then "affected"
+		else
+			[$pl.patches[].compatiblePackages[]? | {p: .packageName, n: .name}] as $apps
+			| ($apps | map(select(.p == $pkg) | .n) | unique) as $own_names
+			| ($apps | map(select(.p != $pkg) | .n) | unique - $own_names) as $other_names
+			| ($pl.patches | map(select(.compatiblePackages == null or any(.compatiblePackages[]; .packageName == $pkg))) | map(.name)) as $own_patches
+			| ($pl.patches | map(select(.compatiblePackages != null and all(.compatiblePackages[]; .packageName != $pkg))) | map(.name)) as $other_patches
+			# The order of the scope tests follows Morphe: a name of another app wins over a segment of
+			# this package, as "youtube" in com.google.android.apps.youtube.music belongs to YouTube.
+			| (($own_names + $own_patches) | map(compact) | map(select(length > 0))) as $own_keys
+			| ($other_names | map(compact) | map(select(length > 0))) as $other_app_keys
+			| ($pkg | segs) as $own_segs
+			| (([$apps[].p | select(. != $pkg)] | unique | map(segs) | add // []) + ($other_patches | map(compact))
+				| map(select(length > 0))) as $other_keys
+			| ["ci", "github", "build", "deps", "docs", "release", "chore", "translations"] as $infra
+			| ($own_names | map(select(length >= 3))) as $own_words
+			| ($other_names | map(select(length >= 3))) as $other_words
+			| def affects:
+				if test("^\\s*[*+-] \\*\\*.+?:\\*\\*") then
+					capture("^\\s*[*+-] \\*\\*(?<s>.+?):\\*\\*\\s*(?<t>.*)") as $b
+					| if ($b.t | exp_only) then false
+					else ($b.s | split(" - ")[0]) as $s2
+						| ([$b.s, $s2] + ($s2 | [splits("[/-]")]) | map(compact) | map(select(length > 0))) as $keys
+						| if ($keys | any_in($own_keys)) then true
+						elif ($keys | any_in($other_app_keys)) then false
+						elif ($keys | any_in($own_segs)) then true
+						elif ($keys | any_in($other_keys)) or ($keys | any_in($infra)) then false
+						else true end
+					end
+				else
+					gsub("\\]\\([^)]*\\)"; "]") | sub("^\\s*[*+-]\\s+"; "") as $t
+					| if ($t | exp_only) then false
+					elif any($own_words[]; . as $n | $t | word($n)) then true
+					elif any($own_patches[]; . as $n | $t | ascii_downcase | contains("`" + ($n | ascii_downcase) + "`")) then true
+					elif any($other_words[]; . as $n | $t | word($n)) then false
+					else true end
+				end;
+			if ($own_names | length) == 0 then "affected"
+			else
+				$rels[$i:$j] | map(.body // "" | [splits("\r?\n")] | map(select(test("^\\s*[*+-]\\s")))) as $per_rel
+				| if any($per_rel[]; length == 0) then "affected"
+				elif any($per_rel[][]; affects) then "affected"
+				else "unaffected" end
+			end
+		end') || return 0
+	[ "$res" != unaffected ]
+}
+
 # Return 0 if $table needs a rebuild for patches source $1@$2. This is true when the current
 # asset differs from the asset recorded for this app in PATCHES_STATE_FILE, and also when nothing
 # is recorded yet. Return 1 in all other cases. A source that the API cannot resolve counts as
-# "no change", so a temporary API error never starts a full build.
+# "no change", so a temporary API error never starts a full build. A changed asset still counts as
+# "no change" when its release notes do not concern the app ($4 is its package, which can be
+# empty, and $5 is true for an 'experimental' app). See _bundle_affects_app. The recorded asset
+# then stays, so the next run reads the notes of the skipped releases again, together with the
+# notes of the newer releases.
 _patches_src_changed() {
-	local PATCHES_SRC=$1 PATCHES_VER=$2 table=$3 recorded
+	local PATCHES_SRC=$1 PATCHES_VER=$2 table=$3 pkg=${4-} exp=${5:-false} recorded
 	_latest_patches_name "$PATCHES_SRC" "$PATCHES_VER" || return 1 # sets LATEST_NAME
 	recorded=$(jq -r --arg t "$table" --arg s "$PATCHES_SRC" '.[$t][$s] // ""' "$PATCHES_STATE_FILE" 2>/dev/null) || recorded=""
-	[ "$LATEST_NAME" != "$recorded" ]
+	[ "$LATEST_NAME" != "$recorded" ] || return 1
+	if [ -n "$recorded" ] && ! _bundle_affects_app "$PATCHES_SRC" "$PATCHES_VER" "$recorded" "$LATEST_NAME" "$pkg" "$exp"; then
+		pr "${table}: no change for ${pkg} in ${PATCHES_SRC} ${recorded} -> ${LATEST_NAME}, skipped" >&2
+		return 1
+	fi
 }
 
 config_update() {
 	[ -f "$PATCHES_STATE_FILE" ] || echo '{}' >"$PATCHES_STATE_FILE"
-	declare -A latest_cache
-	local LATEST_NAME="" upped=()
+	declare -A latest_cache rels_cache plist_cache
+	local LATEST_NAME="" upped=() pkg exp
 	for table_name in $(toml_get_table_names); do
 		if [ -z "$table_name" ]; then continue; fi
 		t=$(toml_get_table "$table_name")
@@ -337,11 +438,18 @@ config_update() {
 		if [ "$enabled" = "false" ]; then continue; fi
 		PATCHES_SRC=$(toml_get "$t" patches-source) || PATCHES_SRC=$DEF_PATCHES_SRC
 		PATCHES_VER=$(toml_get "$t" patches-version) || PATCHES_VER=$DEF_PATCHES_VER
+		# The package: the pkg-name key, else the last segment of archive-dlurl, which is where
+		# get_archive_resp takes it from. Without either, the package stays empty and a changed
+		# bundle always rebuilds the app.
+		if ! pkg=$(toml_get "$t" pkg-name); then
+			if pkg=$(toml_get "$t" archive-dlurl); then pkg=$(norm_dlurl "$pkg") pkg=${pkg##*/}; else pkg=""; fi
+		fi
+		if [ "$(toml_get "$t" version)" = experimental ]; then exp=true; else exp=false; fi
 		local up=false
-		if _patches_src_changed "$PATCHES_SRC" "$PATCHES_VER" "$table_name"; then up=true; fi
+		if _patches_src_changed "$PATCHES_SRC" "$PATCHES_VER" "$table_name" "$pkg" "$exp"; then up=true; fi
 		if EXTRA_SRC=$(toml_get "$t" extra-patches-source); then
 			EXTRA_VER=$(toml_get "$t" extra-patches-version) || EXTRA_VER="latest"
-			if _patches_src_changed "$EXTRA_SRC" "$EXTRA_VER" "$table_name"; then up=true; fi
+			if _patches_src_changed "$EXTRA_SRC" "$EXTRA_VER" "$table_name" "$pkg" "$exp"; then up=true; fi
 		fi
 		if [ "$up" = true ]; then upped+=("$table_name"); fi
 	done
