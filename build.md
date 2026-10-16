@@ -1,6 +1,5 @@
-Facebook-Andrew: 577.0.0.50.72  
 LINE-Andrew: 26.15.1  
-Telegram-Rushi: 12.10.1  
+Photos-Rushi: 7.97.0.997578476  
 
 Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs  
 Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach patched apps from Play Store  
@@ -11,8 +10,8 @@ Every APK/module is published with [GitHub build provenance attestations](https:
 ```  
 gh attestation verify <file> --repo andrewliang25/patched-apps  
 ```  
-Patches: andrewliang25/morphe-patches/patches-3.6.0.mpp  
-[Changelog](https://github.com/andrewliang25/morphe-patches/releases/tag/v3.6.0)
+Patches: andrewliang25/morphe-patches/patches-3.7.0.mpp  
+[Changelog](https://github.com/andrewliang25/morphe-patches/releases/tag/v3.7.0)
 
 Patches: rushiranpise/morphe-patches/patches-1.23.0.mpp  
 [Changelog](https://github.com/rushiranpise/morphe-patches/releases/tag/v1.23.0)
