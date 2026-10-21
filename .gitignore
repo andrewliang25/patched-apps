@@ -12,3 +12,5 @@ cmpr
 *-temporary-files
 local-build-out/
 .DS_Store
+.claude/*
+!.claude/skills
