@@ -17,13 +17,13 @@ The example that follows sets every key and shows every default value.
 ```toml
 parallel-jobs = 1                    # cores to use for parallel patching. Default: $(nproc)
 compression-level = 9                # compression level of the module zip
-remove-rv-integrations-checks = true # remove the checks from the revanced integrations
+remove-rv-integrations-checks = true # remove the checks from the extension
 dpi = "nodpi anydpi 120-640dpi"      # dpi packages to search, in order. Default: "nodpi anydpi"
 
-patches-source = "revanced/revanced-patches" # where to get the patches bundle. Default: "revanced/revanced-patches"
-cli-source = "ReVanced/revanced-cli"             # where to get the cli. Default: "ReVanced/revanced-cli"
+patches-source = "MorpheApp/morphe-patches" # where to get the patches bundle. Default: "MorpheApp/morphe-patches"
+cli-source = "MorpheApp/morphe-cli"             # where to get the cli. Default: "MorpheApp/morphe-cli"
 # You can also set an option like cli-source for one app.
-rv-brand = "ReVanced Extended" # a different brand name than 'ReVanced'. Default: "ReVanced"
+rv-brand = "Morphe" # a different brand name than 'Morphe'. Default: "Morphe"
 
 patches-version = "v2.160.0" # 'latest', 'dev', or a version number. Default: "latest"
 cli-version = "v5.0.0"       # 'latest', 'dev', or a version number. Default: "latest"
@@ -85,7 +85,6 @@ include-stock = "merged"                                   # 'merged', 'split', 
 exclusive-patches = false                                  # exclude all patches by default. Default: false
 
 # enables in-app update check for `apk` build-mode. default: false
-# as of now, works only for yt, yt music, twitter and gphotos
 enable-update-checks = true
 
 apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
