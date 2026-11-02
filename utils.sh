@@ -72,6 +72,10 @@ wpr() {
 	echo >&2 -e "\033[0;33m[!] ${1}\033[0m"
 	if [ "${GITHUB_REPOSITORY-}" ]; then echo >&2 -e "::warning::utils.sh [!] ${1}\n"; fi
 }
+ipr() {
+	echo >&2 -e "\033[0;36m[i] ${1}\033[0m"
+	if [ "${GITHUB_REPOSITORY-}" ]; then echo >&2 -e "::notice::utils.sh [i] ${1}\n"; fi
+}
 
 _clean_tmp() {
 	rm -rf ./${TEMP_DIR}/*tmp.* ./${TEMP_DIR}/*tmp_* ./${TEMP_DIR}/*/*tmp.* ./${TEMP_DIR}/*-temporary-files ./*-temporary-files
@@ -422,7 +426,7 @@ _patches_src_changed() {
 	recorded=$(jq -r --arg t "$table" --arg s "$PATCHES_SRC" '.[$t][$s] // ""' "$PATCHES_STATE_FILE" 2>/dev/null) || recorded=""
 	[ "$LATEST_NAME" != "$recorded" ] || return 1
 	if [ -n "$recorded" ] && ! _bundle_affects_app "$PATCHES_SRC" "$PATCHES_VER" "$recorded" "$LATEST_NAME" "$pkg" "$exp"; then
-		pr "${table}: no change for ${pkg} in ${PATCHES_SRC} ${recorded} -> ${LATEST_NAME}, skipped" >&2
+		ipr "${table} skipped: no change for ${pkg} in ${PATCHES_SRC} ${recorded} -> ${LATEST_NAME}"
 		return 1
 	fi
 }
