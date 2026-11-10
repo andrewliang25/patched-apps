@@ -1,6 +1,6 @@
 {
   "Instagram-Piko": {
-    "crimera/piko": "patches-3.11.0.mpp"
+    "crimera/piko": "patches-3.11.1.mpp"
   },
   "Messenger-DeVanced": {
     "RookieEnough/De-Vanced": "patches-1.4.0.mpp"
@@ -27,12 +27,12 @@
     "andrewliang25/morphe-patches": "patches-3.11.0.mpp"
   },
   "Music-Morphe": {
-    "MorpheApp/morphe-patches": "patches-2.1.0.mpp"
+    "MorpheApp/morphe-patches": "patches-2.2.0.mpp"
   },
   "Reddit-Morphe": {
-    "MorpheApp/morphe-patches": "patches-2.1.0.mpp"
+    "MorpheApp/morphe-patches": "patches-2.2.0.mpp"
   },
   "YouTube-Morphe": {
-    "MorpheApp/morphe-patches": "patches-2.1.0.mpp"
+    "MorpheApp/morphe-patches": "patches-2.2.0.mpp"
   }
 }
