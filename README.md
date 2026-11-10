@@ -22,7 +22,7 @@ Contributors: [sign your commits](CONTRIBUTING.md#signing-your-commits) so that 
 | <div align="center"><img src="assets/icons/youtube.svg" width="28"><br><b>YouTube</b></div> | Morphe | No video ads, SponsorBlock, background playback, Return YouTube Dislike, custom themes | ✅ | ✅ | The APK is renamed and needs MicroG-RE |
 | <div align="center"><img src="assets/icons/ytmusic.svg" width="28"><br><b>YT Music</b></div> | Morphe | No ads, background playback, exclusive-audio mode, minimized playback | ✅ | ✅ | arm64-v8a. The APK is renamed and needs MicroG-RE |
 | <div align="center"><img src="assets/icons/googlephotos.svg" width="28"><br><b>Google Photos</b></div> | Rushi | Unlimited backup at original quality, no device or account model lock, backup control for each DCIM folder, correct grouping of non-Camera DCIM folders | ✅ | ✅ | The APK is renamed to `app.morphe.android.apps.photos`, is labelled **Photos Morphe**, and needs MicroG-RE |
-| <div align="center"><img src="assets/icons/instagram.svg" width="28"><br><b>Instagram</b></div> | Piko | Block ads and sponsored posts, download photos, videos and reels, hide story "seen", turn off typing and read receipts | ✅ | ❌ | The APK is renamed to `app.piko.instagram.android`. **Experimental**, and APK only, see [Instagram: APK only](#instagram-apk-only) |
+| <div align="center"><img src="assets/icons/instagram.svg" width="28"><br><b>Instagram</b></div> | Piko | Block ads and sponsored posts, download photos, videos and reels, hide story "seen", turn off typing and read receipts | ✅ | ✅ | arm64-v8a. The APK is renamed to `app.piko.instagram.android`. **Experimental**, see [Instagram module](#instagram-module) |
 | <div align="center"><img src="assets/icons/facebook.svg" width="28"><br><b>Facebook</b></div> | Andrew | Hide sponsored posts, reels and stories, hide suggested and promoted posts, block background ad prefetch and ad telemetry, turn off Audience Network | ✅ | ✅ | arm64-v8a. The stock APK is self-hosted on archive.org, and the bundle supports one build only. It is not renamed, so the non-root APK **replaces** the official app. Uninstall that app first. **Experimental** |
 | <div align="center"><img src="assets/icons/threads.svg" width="28"><br><b>Threads</b></div> | Chiggi | Hide ads, remove the AD_ID (advertising ID) permission | ✅ | ✅ | arm64-v8a. The APK is renamed to `app.chiggi.instagram.barcelona`. **Experimental**, see the [permission conflict](#meta-app-clones-duplicate-permission-conflict) |
 | <div align="center"><img src="assets/icons/reddit.svg" width="28"><br><b>Reddit</b></div> | Morphe | Block ads, clean share links, hide recommendations and premium prompts, custom branding | ✅ | ✅ | The APK is renamed to `app.morphe.reddit.frontpage`. Earlier releases were not renamed, see [Reddit: renamed](#reddit-renamed) |
@@ -33,7 +33,7 @@ Contributors: [sign your commits](CONTRIBUTING.md#signing-your-commits) so that 
 Each app is one config entry, and it makes two output types:
 
 * **non-root APK** — install it without root. Most APKs get a new package name, either an `app.<patch>.<pkg>` clone or the MicroG-RE variant for Google apps. Thus they install beside the official app instead of replacing it.
-* **module** — a Magisk/KernelSU module that mounts the patched APK over the stock app. It keeps the original package, so it needs root and the stock app. Instagram ships as an APK only.
+* **module** — a Magisk/KernelSU module that mounts the patched APK over the stock app. It keeps the original package, so it needs root and the stock app.
 
 > **Experimental:** Instagram and Facebook use pairip integrity protection. Their patched builds can fail to run on some devices.
 
@@ -52,9 +52,14 @@ This applies to **Threads** alone. The clone `app.chiggi.instagram.barcelona` de
 
 There are two workarounds. Uninstall the official Threads app first, or use the root **module**, which keeps the original package and needs no permission rename.
 
-### Instagram: APK only
+### Instagram module
 
-Instagram ships the clone APK `app.piko.instagram.android` only. On a module, which keeps the original package, the Piko settings screen does not open. See [crimera/piko#882](https://github.com/crimera/piko/issues/882).
+Instagram ships a module again from Piko 3.11.0. Earlier Piko builds could not open the Piko settings screen on a module ([crimera/piko#882](https://github.com/crimera/piko/issues/882)). Piko 3.11.0 opens it inside the activities of Instagram ([crimera/piko#2169](https://github.com/crimera/piko/pull/2169)), so the module needs no manifest change.
+
+A module cannot change the manifest of the app. Thus two parts of Piko do not apply to the module:
+
+* **Change version code.** The Play Store can update Instagram. Then the module stops mounting until it is updated. Detach Instagram from the Play Store, see [Installation](#installation).
+* **Disable telemetry.** The analytics services stay enabled in the manifest. The code part of the patch still applies.
 
 ### Reddit: renamed
 
@@ -88,7 +93,7 @@ Twitter and Instagram use [Piko](https://github.com/crimera/piko). Threads uses 
 
 The config holds short notes only. The settings that follow need more explanation:
 
-* **`clone = true`** (Threads, Photos, Reddit, Instagram) — with `build-mode = "both"`, the non-root APK gets the package name `app.<patch>.<pkg>` and installs beside the official app. The module keeps the original package, so that it can mount over stock. Three tables need a note. Photos is cloned, but its patch sets the name, so the clone is `app.morphe.android.apps.photos` and not `app.rushi.*`. Instagram ships an APK only, see [Instagram: APK only](#instagram-apk-only). Reddit was not renamed up to release 67, see [Reddit: renamed](#reddit-renamed). Twitter ships both outputs and is not cloned, because the `Clone` patch of Piko does not cover `com.twitter.android`.
+* **`clone = true`** (Threads, Photos, Reddit, Instagram) — with `build-mode = "both"`, the non-root APK gets the package name `app.<patch>.<pkg>` and installs beside the official app. The module keeps the original package, so that it can mount over stock. Two tables need a note. Photos is cloned, but its patch sets the name, so the clone is `app.morphe.android.apps.photos` and not `app.rushi.*`. Reddit was not renamed up to release 67, see [Reddit: renamed](#reddit-renamed). Twitter ships both outputs and is not cloned, because the `Clone` patch of Piko does not cover `com.twitter.android`.
 * **Self-hosted stock APKs (archive.org)** — every app has a mirror on a self-hosted archive.org item, and the build tries that mirror before apkmirror. Facebook, Twitter, Instagram, Threads, Telegram and LINE need the mirror, because the public sources do not serve their builds. If a source cannot serve the wanted build, the build tries the next source of the app.
 * **`enable-module-update`** — set it to `false` to stop in-app updates of the modules.
 
