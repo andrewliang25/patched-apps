@@ -1,7 +1,4 @@
-Instagram-Piko: 452.1.0.53.64  
-Music-Morphe: 9.30.53  
-Reddit-Morphe: 2026.40.0  
-YouTube-Morphe: 21.30.216  
+LINE-Andrew: 26.16.0  
 
 Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) for non-root Google APKs  
 Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach patched apps from Play Store  
@@ -12,10 +9,7 @@ Every APK/module is published with [GitHub build provenance attestations](https:
 ```  
 gh attestation verify <file> --repo andrewliang25/patched-apps  
 ```  
-Patches: crimera/piko/patches-3.11.1.mpp  
-[Changelog](https://github.com/crimera/piko/releases/tag/v3.11.1)
+Patches: andrewliang25/morphe-patches/patches-3.12.0.mpp  
+[Changelog](https://github.com/andrewliang25/morphe-patches/releases/tag/v3.12.0)
 
-Patches: MorpheApp/morphe-patches/patches-2.2.0.mpp  
-[Changelog](https://github.com/MorpheApp/morphe-patches/releases/tag/v2.2.0)
-
-CLI: MorpheApp/morphe-cli/morphe-desktop-2.1.1-all.jar    
+CLI: MorpheApp/morphe-cli/morphe-desktop-2.2.0-all.jar    
