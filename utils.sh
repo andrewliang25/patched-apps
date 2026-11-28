@@ -21,7 +21,10 @@ FAILED_BUILDS_FILE="failed-builds.txt"
 # build.yml sends these to the admin chat and the job summary.
 BUILD_WARNINGS_FILE="build-warnings.txt"
 
-if [ "${GITHUB_TOKEN-}" ]; then GH_HEADER="Authorization: token ${GITHUB_TOKEN}"; else GH_HEADER=; fi
+# The fork's workflow steps pass GITHUB_TOKEN; upstream's rename to GH_TOKEN is accepted as well.
+_gh_tok=${GH_TOKEN:-${GITHUB_TOKEN-}}
+if [ "$_gh_tok" ]; then GH_HEADER="Authorization: token ${_gh_tok}"; else GH_HEADER=; fi
+if [ "${GH_REPO-}" ]; then GITHUB_REPOSITORY="${GH_REPO}"; fi
 NEXT_VER_CODE=${NEXT_VER_CODE:-$(date +'%Y%m%d')}
 OS=$(uname -o)
 
@@ -1194,7 +1197,8 @@ build_rv() {
 			abort "unreachable build mode: $build_mode"
 		fi
 
-		if [ "${args[enable_update_checks]}" = "true" ] && [ "$build_mode" = "apk" ] && [ -n "${GITHUB_REPOSITORY-}" ]; then
+		if [ "${args[enable_update_checks]}" = "true" ] && [ "$build_mode" = "apk" ] &&
+			[ -n "${GITHUB_REPOSITORY-}" ] && [ -n "${NEXT_VER_CODE-}" ]; then
 			local p="$TEMP_DIR/jhc-update-check.mpp"
 			if [ ! -f $p ]; then
 				local resp dlurl
@@ -1203,16 +1207,8 @@ build_rv() {
 				gh_dl $p "$dlurl" >/dev/null || return 1
 			fi
 			patcher_args+=("-p '$p'")
-
-			local v
-			v=$(git tag --sort=committerdate | tail -1) || :
-			if [[ $v =~ ^[0-9]+$ ]]; then
-				v=$((v + 1))
-				patcher_args+=("-e 'j-hc Update Check'")
-				patcher_args+=("-e 'j-hc Update Check Res' -OcurrentTag='\"$v\"' -OupdateRepo='\"${GITHUB_REPOSITORY}\"'")
-			else
-				epr "'$v' is not a proper version tag"
-			fi
+			patcher_args+=("-e 'j-hc Update Check'")
+			patcher_args+=("-e 'j-hc Update Check Res' -OcurrentTag='\"${NEXT_VER_CODE}\"' -OupdateRepo='\"${GITHUB_REPOSITORY}\"'")
 		fi
 
 		if grep -Fq -- '--striplibs' <<<"$(java 2>&1 -jar "$cli_jar" patch)"; then
