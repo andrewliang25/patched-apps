@@ -140,7 +140,9 @@ rv-brand = "Andrew"
 build-mode = "both"
 # archive hosts an arm64-only apkm, because apkmirror returns 403 for the split bundle of LINE.
 # There is no 'clone', because the bundle has no rename patch and LINE depends on its package.
-version = "auto"
+# Pinned: LINE 26.19.0 removed VOOM, so the two VOOM patches no longer list it and 'auto' would
+# stay on 26.18.2 (the last version with VOOM). They skip themselves on 26.19.0. Bump by hand.
+version = "26.19.0"
 arch = "arm64-v8a"
 # This keeps the original split signature of LINE, which its server-side integrity checks need.
 include-stock = "auto"
